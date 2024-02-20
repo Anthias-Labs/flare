@@ -1,7 +1,11 @@
 mod lib;
-use lib::{Context, wallet_from_seed_phrase, sign_message, new_wallet};
+use lib::{new_wallet, sign_message, wallet_from_seed_phrase, Context};
+
+mod args;
+use args::FlareCli;
 
 use anyhow::{Error, Result};
+use clap::Parser;
 use std::str::FromStr;
 
 use bip39::Mnemonic;
@@ -22,10 +26,11 @@ const URL_DEVNET: &str = "https://api.devnet.solana.com";
 const URL_TESTNET: &str = "https://api.testnet.solana.com";
 
 const MNEMONIC: &str = "mirror dry jazz old argue smooth jacket universe minimum latin text love";
-const MNEMONIC_2: &str = "gift runway carpet cool scale trim beauty company hold beach visa festival";
+const MNEMONIC_2: &str =
+    "gift runway carpet cool scale trim beauty company hold beach visa festival";
 
 fn main() -> Result<()> {
-    let ctx = Context::new(URL);
+    /* let ctx = Context::new(URL);
     let pubkey = Pubkey::from_str("mrgn3H4uBbKAWBjdFKSGks3SpLm4q8YaRxUCMGa5ZBY").unwrap();
     println!("{}", ctx.get_balance(&pubkey)?);
     let k = new_wallet()?;
@@ -39,6 +44,7 @@ fn main() -> Result<()> {
     println!("{}", sign_message(&nw, "msg"));
 
     println!("Current block height {}", ctx.get_block_height()?);
-    println!("Current epoch number {}", ctx.get_epoch_number()?);
+    println!("Current epoch number {}", ctx.get_epoch_number()?);*/
+    let args = FlareCli::parse();
     Ok(())
 }
