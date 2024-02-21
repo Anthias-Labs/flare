@@ -1,3 +1,4 @@
+use core::fmt;
 use std::str::FromStr;
 
 use anyhow::{Error, Result};
@@ -20,7 +21,8 @@ const URL_DEVNET: &str = "https://api.devnet.solana.com";
 const URL_TESTNET: &str = "https://api.testnet.solana.com";
 
 const MNEMONIC: &str = "mirror dry jazz old argue smooth jacket universe minimum latin text love";
-const MNEMONIC_2: &str = "gift runway carpet cool scale trim beauty company hold beach visa festival";
+const MNEMONIC_2: &str =
+    "gift runway carpet cool scale trim beauty company hold beach visa festival";
 
 pub struct Context {
     pub rpc_client: RpcClient,
@@ -30,6 +32,17 @@ pub struct Context {
 pub struct Wallet {
     pub key_pair: Keypair,
     pub mnemonic: String,
+}
+
+impl fmt::Display for Wallet {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "Address: {}\nMnemonic: {}\n",
+            self.key_pair.pubkey(),
+            self.mnemonic
+        )
+    }
 }
 
 impl Context {
@@ -89,10 +102,8 @@ impl Context {
             .rpc_client
             .get_account(&Pubkey::from_str(program_address)?)?;
 
-
         //let data = acc.try_desirialize();
         Ok(())
-
     }
 }
 

@@ -1,11 +1,10 @@
 use clap::{Args, Parser, Subcommand};
-use solana_program::pubkey::Pubkey;
 
 #[derive(Debug, Parser)]
 #[clap(author, version, about)]
 pub struct FlareCli {
     #[clap(subcommand)]
-    command: FlareCommand,
+    pub command: FlareCommand,
 }
 
 #[derive(Debug, Subcommand)]
@@ -35,36 +34,36 @@ pub enum FlareCommand {
 #[derive(Debug, Args)]
 pub struct BalanceCommand {
     /// Pubkey
-    pubkey: Pubkey,
+    pub pubkey: String,
 }
 
 #[derive(Debug, Args)]
 pub struct SendCommand {
     /// Mnemonic
     #[arg(short, long)]
-    mnemonic: String,
+    pub mnemonic: String,
 
     /// Target pubkey
     #[arg(short, long)]
-    to: Pubkey,
+    pub to: String,
 
     /// Amount
-    amount: f32,
+    pub amount: u64,
 }
 
 #[derive(Debug, Args)]
 pub struct SignCommand {
     /// Mnemonic
     #[arg(short, long)]
-    mnemonic: String,
+    pub mnemonic: String,
 
     /// Message
-    msg: String,
+    pub msg: String,
 }
 
 #[derive(Debug, Args)]
 pub struct WalletRecoverCommand {
     /// Mnemonic
     #[arg(short, long)]
-    mnemonic: String,
+    pub mnemonic: String,
 }
