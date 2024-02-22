@@ -49,6 +49,9 @@ Flare is the first tool from Solstice, the toolkit for developers on Solana. The
 
 Anthias Labs is a boutique blockchain r&d firm focused on public goods tooling and actionable research. To see more about us, feel free to review [here](https://www.anthias.xyz/home).
 
+## Acknowledgements
+Acknowledgments of the contributors to Flare will be posted here once Flare v0 is shipped in late March of 2024
+
 ## Contributing
 To contribute to Flare, please reach out to the current contributors in our main [Contributor Discord](https://discord.gg/RCJYpMvkBy). 
 
