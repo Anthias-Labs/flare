@@ -9,25 +9,25 @@ pub struct FlareCli {
 
 #[derive(Debug, Subcommand)]
 pub enum FlareCommand {
-    /// Gets balance for a determined pubkey
+    /// Gets balance for a given wallet address
     Balance(BalanceCommand),
 
-    /// Gets block height
+    /// Gets the current block height
     BlockHeight,
 
-    /// Gets epoch
+    /// Gets the current epoch
     Epoch,
 
-    /// Sends money
+    /// Sends lamport to another account
     Send(SendCommand),
 
-    /// Signs message
+    /// Signs an arbitrary message with a private key
     Sign(SignCommand),
 
-    /// Creates a wallet
+    /// Creates a new random wallet
     WalletCreate,
 
-    /// Recovers a wallet
+    /// Recovers a wallet from its mnemonic
     WalletRecover(WalletRecoverCommand),
 }
 
