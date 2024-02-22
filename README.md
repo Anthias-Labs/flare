@@ -12,8 +12,38 @@ Please make sure you have Cargo in your system.
 4. Move into the binary location `cd target/debug`
 5. Run the compiled binary with `./flare`
 
-## About
+## Functions
+### Chain and Transaction Interactions:
+`flare send`: allows sending SOL to an account
 
+`flare balance`: checks SOL balance for a given address
+
+`flare epoch`: get the current epoch number
+
+`flare block-height`: get the current epoch number
+
+
+### Wallet Management:
+`flare wallet-create`: generates keypair and mnemonic for a new wallet
+
+`flare wallet-recover`: gets keypair from a given mnemonic
+
+### Utils (Additional):
+
+`flare sign`: sign an arbitrary message with a given private key
+
+## Roadmap
+- [X] Reading wallet SOL balance from chain
+- [X] Reading epoch/block height
+- [X] Sending SOL transactions between accounts
+- [X] Creating wallets and recovering from mnemonic
+- [X] Signing arbitrary messages
+- [ ] Adding CLI options for handling different cluster RPCs
+- [ ] Calling methods and reading state from on-chain programs
+- [ ] Adding utils for common format convertions
+- [ ] File-based  wallet and config management (storage and read)
+
+## About
 Flare is the first tool from Solstice, the toolkit for developers on Solana. The development of Flare was originally funded by a grant from the Solana Foundation to Anthias Labs in January of 2024. Flare’s public launch is scheduled for April of 2024.
 
 
