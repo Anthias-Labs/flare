@@ -38,7 +38,7 @@ Please make sure you have Cargo in your system.
 - [X] Sending SOL transactions between accounts
 - [X] Creating wallets and recovering from mnemonic
 - [X] Signing arbitrary messages
-- [ ] Adding CLI options for handling different cluster RPCs
+- [X] Adding CLI options for handling different cluster RPCs
 - [ ] Calling methods and reading state from on-chain programs
 - [ ] Adding utils for common format convertions
 - [ ] File-based  wallet and config management (storage and read)
