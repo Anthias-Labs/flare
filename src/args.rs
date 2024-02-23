@@ -5,6 +5,10 @@ use clap::{Args, Parser, Subcommand};
 pub struct FlareCli {
     #[clap(subcommand)]
     pub command: FlareCommand,
+
+    /// Sets cluster (can be devnet, mainnet, testnet or a specific url)
+    #[arg(short, long, default_value_t = String::from("devnet"))]
+    pub cluster: String,
 }
 
 #[derive(Debug, Subcommand)]

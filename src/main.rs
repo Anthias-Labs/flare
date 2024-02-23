@@ -28,10 +28,22 @@ const MNEMONIC: &str = "mirror dry jazz old argue smooth jacket universe minimum
 const MNEMONIC_2: &str =
     "gift runway carpet cool scale trim beauty company hold beach visa festival";
 
+fn get_context_from_cluster(cluster: &str) -> Context {
+    let cluster_url;
+    match cluster {
+        "devnet" => cluster_url = URL_DEVNET,
+        "mainnet" => cluster_url = URL,
+        "testnet" => cluster_url = URL_TESTNET,
+        &_ => cluster_url = cluster,
+    }
+    Context::new(cluster_url)
+}
+
 fn main() -> Result<()> {
     let args = FlareCli::parse();
-    let ctx = Context::new(URL_DEVNET);
+    let cluster = args.cluster.to_lowercase();
 
+    let ctx = get_context_from_cluster(&cluster);
     match args.command {
         FlareCommand::Balance(balance_data) => {
             let pubkey = Pubkey::from_str(&balance_data.pubkey)?;
