@@ -1,4 +1,4 @@
-**:construction: WIP: This tool is in active development, and can experience breaking changes. For safety, it currently only operates on Devnet**
+**:construction: WIP: This tool is in active development, and can experience breaking changes. For safety, it currently operates on Devnet by default**
 
 # Flare
 
