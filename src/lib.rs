@@ -13,7 +13,12 @@ use solana_sdk::{
 };
 
 use anchor_client::{Client, ClientError, Program};
-use anchor_lang;
+use anchor_lang::idl::IdlAccount;
+use anchor_lang::AnchorDeserialize;
+use anchor_syn::idl::types::Idl;
+use flate2::read::ZlibDecoder;
+use serde_json::{json, Map, Value as JsonValue};
+use std::io::Read;
 
 const URL: &str = "https://api.mainnet-beta.solana.com";
 
@@ -97,13 +102,26 @@ impl Context {
         Ok(epoch.epoch)
     }
 
-    pub fn get_idl(&self, program_address: &str) -> Result<()> {
-        let acc = self
+    pub fn get_idl(&self, program_address: &str) -> Result<Idl> {
+        let idl_addr = Pubkey::from_str(&program_address)?;
+        let mut account = self
             .rpc_client
             .get_account(&Pubkey::from_str(program_address)?)?;
+        if account.executable {
+            let idl_addr = IdlAccount::address(&idl_addr);
+            account = self.rpc_client.get_account(&idl_addr)?;
+        }
 
-        //let data = acc.try_desirialize();
-        Ok(())
+        // Cut off account discriminator.
+        let mut d: &[u8] = &account.data[8..];
+        let idl_account: IdlAccount = AnchorDeserialize::deserialize(&mut d)?;
+
+        let compressed_len: usize = idl_account.data_len.try_into().unwrap();
+        let compressed_bytes = &account.data[44..44 + compressed_len];
+        let mut z = ZlibDecoder::new(compressed_bytes);
+        let mut s = Vec::new();
+        z.read_to_end(&mut s)?;
+        serde_json::from_slice(&s[..]).map_err(Into::into)
     }
 }
 

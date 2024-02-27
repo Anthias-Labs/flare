@@ -5,7 +5,7 @@ mod args;
 use args::{FlareCli, FlareCommand};
 
 use anchor_client::{Client, ClientError, Program};
-use anchor_lang;
+
 use anyhow::{Error, Result};
 use bip39::Mnemonic;
 use clap::Parser;
