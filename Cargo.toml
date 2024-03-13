@@ -12,6 +12,7 @@ anchor-lang = "0.29.0"
 anchor-syn = "0.29.0"
 anyhow = "1.0.79"
 bip39 = "2.0.0"
+borsh = "0.9.1"
 clap = { version = "4.5.1", features = ["derive"] }
 flate2 = "1.0.28"
 rand = "0.8.5"

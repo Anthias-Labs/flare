@@ -3,9 +3,12 @@ use lib::{new_wallet, sign_message, wallet_from_seed_phrase, Context};
 
 mod args;
 use args::{FlareCli, FlareCommand};
+// use borsh::io;
+use std::io;
+use borsh::{BorshSerialize};
 
-use anchor_client::{Client, ClientError, Program};
-
+use anchor_client::{Client, ClientError, Config, Program};
+use anchor_lang::AnchorSerialize;
 use anyhow::{Error, Result};
 use bip39::Mnemonic;
 use clap::Parser;
@@ -39,7 +42,30 @@ fn get_context_from_cluster(cluster: &str) -> Context {
     Context::new(cluster_url)
 }
 
+fn test_program() -> Result<()> {
+    let prog_addr = "2CQAxft3JDVfMgjW3T73hWYFym1UZZWmuhHgq3JmEYa1";
+    let prog_pub = Pubkey::from_str(prog_addr)?;
+
+    Ok(())
+}
+
+#[derive(AnchorSerialize)]
+struct Pito {
+    a: i32,
+    b: i64
+}
+
+fn test_ser() -> Result<()> {
+    let p = Pito{a: 1141832, b: 2};
+    let v = p.try_to_vec()?;
+    println!("{:?}", v);
+
+    Ok(())
+}
+
 fn main() -> Result<()> {
+    test_ser()
+    /*
     let args = FlareCli::parse();
     let cluster = args.cluster.to_lowercase();
 
@@ -69,5 +95,5 @@ fn main() -> Result<()> {
         FlareCommand::Epoch => println!("Epoch number: {}", ctx.get_epoch_number()?),
     }
 
-    Ok(())
+    Ok(())*/
 }
