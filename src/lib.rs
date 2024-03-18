@@ -3,13 +3,12 @@ use std::str::FromStr;
 
 use anyhow::{Error, Result};
 use bip39::Mnemonic;
+use borsh::BorshDeserialize;
 use rand::RngCore;
 use solana_client::rpc_client::RpcClient;
 use solana_program::{native_token::LAMPORTS_PER_SOL, pubkey::Pubkey};
 use solana_sdk::{
-    signature::{keypair_from_seed_phrase_and_passphrase, Keypair},
-    signer::Signer,
-    system_transaction,
+    account, signature::{keypair_from_seed_phrase_and_passphrase, Keypair}, signer::Signer, system_transaction
 };
 
 use anchor_client::{Client, ClientError, Program};
@@ -122,6 +121,14 @@ impl Context {
         let mut s = Vec::new();
         z.read_to_end(&mut s)?;
         serde_json::from_slice(&s[..]).map_err(Into::into)
+    }
+
+
+    pub fn read_account<T: BorshDeserialize>(&self, account_address: &Pubkey) -> Result<T> {
+        let mut account = self.rpc_client.get_account(account_address)?;
+        let mut data = &account.data[8..];
+        let r: T = BorshDeserialize::deserialize(&mut data)?;
+        Ok(r)
     }
 }
 
