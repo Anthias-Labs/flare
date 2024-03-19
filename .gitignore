@@ -15,5 +15,7 @@ Cargo.lock
 
 
 # Added by cargo
-
 /target
+
+# Directory for data files
+data

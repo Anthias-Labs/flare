@@ -36,6 +36,7 @@ pub struct IdlField {
 }
 
 #[derive(Debug, Deserialize, BorshDeserialize, BorshSerialize, Clone)]
+#[allow(warnings)]
 pub enum IdlEnumType {
     bool,
     u8,
