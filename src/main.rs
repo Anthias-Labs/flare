@@ -1,10 +1,16 @@
 mod lib;
 use lib::{new_wallet, sign_message, wallet_from_seed_phrase, Context};
 
+mod idl;
+mod program_executor;
+
 mod args;
 use args::{FlareCli, FlareCommand};
+
 // use borsh::io;
+//use borsh::*;
 use borsh::{BorshDeserialize, BorshSerialize};
+use program_executor::ProgramExecutor;
 use solana_sdk::address_lookup_table::instruction;
 use solana_sdk::instruction::AccountMeta;
 use std::io;
@@ -55,12 +61,12 @@ fn test_program() -> Result<()> {
     Ok(())
 }
 
-#[derive(AnchorSerialize)]
+#[derive(BorshDeserialize, BorshSerialize)]
 struct Ix {
     vote_type: VoteType,
 }
 
-#[derive(AnchorSerialize)]
+#[derive(BorshSerialize, BorshDeserialize)]
 pub enum VoteType {
     Gm,
     Gn,
@@ -85,7 +91,6 @@ pub fn sighash(namespace: &str, name: &str) -> [u8; 8] {
 }
 
 fn test_ser() -> Result<()> {
-
     let ctx = Context::new(URL_DEVNET);
     let w = wallet_from_seed_phrase(MNEMONIC)?;
     let ix = Ix {
@@ -95,8 +100,8 @@ fn test_ser() -> Result<()> {
     // aca calculo el discriminator
     let disc = sighash("global", "gib_vote"); // global mepa que es lo mismo siempre, si el metodo se llama gibVote lo pasas a gib_vote.
 
-
-    let ixBytes = ix.try_to_vec()?; // seria el borsh del instruction data
+    let ixBytes: Vec<u8> = Vec::new();
+    //let ixBytes = ix.try_to_vec()?; // seria el borsh del instruction data
 
     let mut data: Vec<u8> = disc.to_vec();
     data.extend(ixBytes); // necesitas concatenar discriminator con el borsh de instruction data
@@ -104,9 +109,9 @@ fn test_ser() -> Result<()> {
     println!("DATA {:?}", data);
 
     let prog_id = Pubkey::from_str("WixFUMVqBSTygzeFy9Wuy5XxkeH8xHnUEGvfyyJYqve")?; // es uno de los contratos de prueba de anchor, te deja votar por gm o gn
-    
+
     // este metodo te pide pasarle dos accounts, el bank (que seria como un argumento) y el signer
-    let acc_bank_address = Pubkey::from_str("78vJRdkATNZm7cJHaLscYu1HZq24EH3FV6Eppx3BS9qA")?; 
+    let acc_bank_address = Pubkey::from_str("78vJRdkATNZm7cJHaLscYu1HZq24EH3FV6Eppx3BS9qA")?;
     let acc_bank = AccountMeta::new(acc_bank_address, false);
     let acc_sig = AccountMeta::new(w.key_pair.pubkey(), true);
 
@@ -117,7 +122,7 @@ fn test_ser() -> Result<()> {
 
     let blockhash = ctx.rpc_client.get_latest_blockhash()?; // agarras blockhash fresco
 
-    // construyo el transaction con el instruction que hice antes, pubkey y keypair de la wallet que manda la transaccion y el blockhash que agarras antes    
+    // construyo el transaction con el instruction que hice antes, pubkey y keypair de la wallet que manda la transaccion y el blockhash que agarras antes
     let mut tx = Transaction::new_signed_with_payer(
         &[instruction],
         Some(&w.key_pair.pubkey()),
@@ -127,10 +132,11 @@ fn test_ser() -> Result<()> {
 
     println!("\nTX {:?}", tx);
 
-    ctx.rpc_client.send_and_confirm_transaction_with_spinner(&tx)?; // con esta function le agrega un iconito de carga mientras manda la transaccion
+    ctx.rpc_client
+        .send_and_confirm_transaction_with_spinner(&tx)?; // con esta function le agrega un iconito de carga mientras manda la transaccion
 
     // aca leo despues de actualizar:
-    let r : VoteBank= ctx.read_account(&acc_bank_address)?; // por ahora uso el BorshDeserialize para leer pero para el final seguramente tengamos que hacer otra cosa
+    let r: VoteBank = ctx.read_account(&acc_bank_address)?; // por ahora uso el BorshDeserialize para leer pero para el final seguramente tengamos que hacer otra cosa
 
     println!("\nAfter {:?}", r);
 
@@ -138,7 +144,12 @@ fn test_ser() -> Result<()> {
 }
 
 fn main() -> Result<()> {
-    test_ser()
+    //test_ser()
+
+    let executor = ProgramExecutor::from("./onchain_voting.json");
+    let mut args = Vec::new();
+    args.push("GM".to_string());
+    executor.run_instruction("gibVote".to_string(), args)?;
     /*
     let args = FlareCli::parse();
     let cluster = args.cluster.to_lowercase();
@@ -170,4 +181,6 @@ fn main() -> Result<()> {
     }
 
     Ok(())*/
+
+    Ok(())
 }
