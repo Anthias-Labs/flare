@@ -1,19 +1,22 @@
+use std::collections::HashMap;
 use std::fs;
 
+use anchor_syn::idl::types::{
+    Idl, IdlAccountItem, IdlInstruction, IdlType, IdlTypeDefinition, IdlTypeDefinitionTy,
+};
 use anyhow::Result;
-use borsh::BorshSerialize;
+use borsh::{BorshDeserialize, BorshSerialize};
+use convert_case::{Case, Casing};
 use solana_sdk::instruction::{AccountMeta, Instruction};
 use solana_sdk::signer::Signer;
 use solana_sdk::transaction::Transaction;
 
-use crate::{sighash, VoteBank};
+use crate::sighash;
 
-use crate::lib::Context;
+use crate::lib::{Context, Wallet};
 
-use crate::idl::{Idl, IdlEnumType, IdlInstruction, IdlKind, IdlType};
-use flare::wallet_from_seed_phrase;
+//use crate::idl::{Idl, IdlEnumType, IdlInstruction, IdlKind, IdlType};
 use solana_program::pubkey::Pubkey;
-use std::str::FromStr;
 
 /**
  * Implementar funciones para obtener
@@ -33,15 +36,26 @@ macro_rules! serialize_by_type {
 
 pub struct ProgramExecutor {
     idl: Idl,
+    context: Context,
 }
 
-impl From<&str> for ProgramExecutor {
-    fn from(value: &str) -> Self {
+// CAMBIAR ESTO PARA QUE SE PUEDA INSTANCIAR POR FILE O POR GET_IDL
+impl ProgramExecutor {
+    pub fn from_file(cluster: &str, path: &str) -> Self {
         ProgramExecutor {
             idl: serde_json::from_str(
-                &fs::read_to_string(value).expect("Cant IDL (change message)"),
+                &fs::read_to_string(path).expect("Cant IDL (change message)"),
             )
             .expect("Cant JSON (change this message)"),
+            context: Context::from_cluster(cluster),
+        }
+    }
+
+    pub fn from_program_address(cluster: &str, program_address: &str) -> Self {
+        let context = Context::from_cluster(cluster);
+        ProgramExecutor {
+            idl: context.get_idl(program_address).unwrap(),
+            context,
         }
     }
 }
@@ -49,83 +63,86 @@ impl From<&str> for ProgramExecutor {
 impl ProgramExecutor {
     fn get_serialized_args_for_instruction_rec(
         &self,
-        type_to_serialize: IdlEnumType,
+        type_to_serialize: IdlType,
         args: &Vec<String>,
         pos: usize,
     ) -> (Vec<u8>, usize) {
         let mut serialized_type: Vec<u8> = Vec::new();
         let mut pos = pos;
         match type_to_serialize {
-            IdlEnumType::bool => {
+            IdlType::Bool => {
                 serialize_by_type!(args[pos], &mut serialized_type, bool);
                 pos += 1;
             }
-            IdlEnumType::u8 => {
+            IdlType::U8 => {
                 serialize_by_type!(args[pos], &mut serialized_type, u8);
                 pos += 1;
             }
-            IdlEnumType::i8 => {
+            IdlType::I8 => {
                 serialize_by_type!(args[pos], &mut serialized_type, i8);
                 pos += 1;
             }
-            IdlEnumType::u16 => {
+            IdlType::U16 => {
                 serialize_by_type!(args[pos], &mut serialized_type, u16);
                 pos += 1;
             }
-            IdlEnumType::i16 => {
+            IdlType::I16 => {
                 serialize_by_type!(args[pos], &mut serialized_type, i16);
                 pos += 1;
             }
-            IdlEnumType::u32 => {
+            IdlType::U32 => {
                 serialize_by_type!(args[pos], &mut serialized_type, u32);
                 pos += 1;
             }
-            IdlEnumType::i32 => {
+            IdlType::I32 => {
                 serialize_by_type!(args[pos], &mut serialized_type, i32);
                 pos += 1;
             }
-            IdlEnumType::u64 => {
+            IdlType::U64 => {
                 serialize_by_type!(args[pos], &mut serialized_type, u64);
                 pos += 1;
             }
-            IdlEnumType::i64 => {
+            IdlType::I64 => {
                 serialize_by_type!(args[pos], &mut serialized_type, i64);
                 pos += 1;
             }
-            IdlEnumType::u128 => {
+            IdlType::U128 => {
                 serialize_by_type!(args[pos], &mut serialized_type, u128);
                 pos += 1;
             }
-            IdlEnumType::i128 => {
+            IdlType::I128 => {
                 serialize_by_type!(args[pos], &mut serialized_type, i128);
                 pos += 1;
             }
-            IdlEnumType::f32 => {
+            IdlType::F32 => {
                 serialize_by_type!(args[pos], &mut serialized_type, f32);
                 pos += 1;
             }
-            IdlEnumType::f64 => {
+            IdlType::F64 => {
                 serialize_by_type!(args[pos], &mut serialized_type, f64);
                 pos += 1;
             }
-            IdlEnumType::string => {
+            IdlType::String => {
                 serialize_by_type!(args[pos], &mut serialized_type, String);
                 pos += 1;
             }
-            IdlEnumType::publicKey => {
+            IdlType::PublicKey => {
                 serialize_by_type!(args[pos], &mut serialized_type, Pubkey);
                 pos += 1;
             }
-            IdlEnumType::bytes => {
-                args[pos].as_bytes().serialize(&mut serialized_type); // chequear dif entre as_bytes y serialize
+            IdlType::Bytes => {
+                args[pos]
+                    .as_bytes()
+                    .serialize(&mut serialized_type)
+                    .unwrap(); // chequear dif entre as_bytes y serialize
                 pos += 1;
             }
-            IdlEnumType::defined(defined_type_name) => {
+            IdlType::Defined(defined_type_name) => {
                 let defined_type = self.get_defined_type_by_name(defined_type_name).unwrap();
-                let kind = defined_type.ty.kind;
+                let kind = defined_type.ty;
                 match kind {
-                    IdlKind::Struct => {
-                        for field in defined_type.ty.fields.unwrap().iter() {
+                    IdlTypeDefinitionTy::Struct { fields } => {
+                        for field in fields.iter() {
                             let mut rec_call_to_type = self
                                 .get_serialized_args_for_instruction_rec(
                                     field.ty.clone(),
@@ -136,9 +153,9 @@ impl ProgramExecutor {
                             pos = rec_call_to_type.1;
                         }
                     }
-                    IdlKind::Enum => {
+                    IdlTypeDefinitionTy::Enum { variants } => {
                         let mut count = 0;
-                        for each_variant in defined_type.ty.variants.unwrap().iter() {
+                        for each_variant in variants.iter() {
                             if args[pos].eq(&each_variant.name) {
                                 serialized_type.push(count);
                                 break; // wacala
@@ -147,9 +164,12 @@ impl ProgramExecutor {
                         }
                         pos += 1;
                     }
+                    IdlTypeDefinitionTy::Alias { value } => {
+                        // que es esto?
+                    }
                 }
             }
-            IdlEnumType::vec(vec_type) => {
+            IdlType::Vec(vec_type) => {
                 let arr_size = args[pos].parse::<u64>().unwrap();
                 let mut counter = 0;
                 pos += 1;
@@ -161,7 +181,7 @@ impl ProgramExecutor {
                     counter += 1;
                 }
             }
-            IdlEnumType::array(array_type, array_size) => {
+            IdlType::Array(array_type, array_size) => {
                 let mut counter = 0;
                 pos += 1;
                 while counter < array_size {
@@ -175,12 +195,18 @@ impl ProgramExecutor {
                     counter += 1;
                 }
             }
-            IdlEnumType::option(option_type) => {}
+            // ver como hacer estos y algunos ver que carajos jaja salu2
+            IdlType::Option(option_type) => {}
+            IdlType::GenericLenArray(array_type, string_rare) => {}
+            IdlType::Generic(string_rare) => {}
+            IdlType::DefinedWithTypeArgs { name, args } => {}
+            IdlType::U256 => {}
+            IdlType::I256 => {}
         }
         (serialized_type, pos)
     }
 
-    fn get_defined_type_by_name(&self, type_name: String) -> Option<IdlType> {
+    fn get_defined_type_by_name(&self, type_name: String) -> Option<IdlTypeDefinition> {
         for idl_type in self.idl.types.iter() {
             if idl_type.name == type_name {
                 return Some(idl_type.clone());
@@ -191,7 +217,7 @@ impl ProgramExecutor {
 
     fn get_serialized_args_for_instruction(
         &self,
-        instruction_name: String,
+        instruction_name: &str,
         args: Vec<String>,
     ) -> Vec<u8> {
         let instruction = self.get_instruction_by_name(instruction_name).unwrap();
@@ -205,6 +231,29 @@ impl ProgramExecutor {
         }
         args_serialized
     }
+
+    fn get_accounts_for_instruction(
+        &self,
+        instruction_name: &str,
+        account_pubkeys: &HashMap<String, Pubkey>,
+    ) -> Option<Vec<AccountMeta>> {
+        let instruction = self.get_instruction_by_name(instruction_name).unwrap();
+        let mut accounts: Vec<AccountMeta> = Vec::new();
+        for account in instruction.accounts {
+            if let IdlAccountItem::IdlAccount(account) = account {
+                if let Some(pubkey) = account_pubkeys.get(&account.name) {
+                    if account.is_mut {
+                        accounts.push(AccountMeta::new(*pubkey, account.is_signer))
+                    } else {
+                        accounts.push(AccountMeta::new_readonly(*pubkey, account.is_signer))
+                    }
+                } else {
+                    return None;
+                }
+            }
+        }
+        return Some(accounts);
+    }
 }
 
 impl ProgramExecutor {
@@ -216,7 +265,7 @@ impl ProgramExecutor {
         self.idl.instructions.clone()
     }
 
-    pub fn get_instruction_by_name(&self, instruction_name: String) -> Option<IdlInstruction> {
+    pub fn get_instruction_by_name(&self, instruction_name: &str) -> Option<IdlInstruction> {
         for instruction in self.idl.instructions.iter() {
             if instruction.name == instruction_name {
                 return Some(instruction.clone());
@@ -225,63 +274,37 @@ impl ProgramExecutor {
         None
     }
 
-    pub fn run_instruction(&self, instruction_name: String, args: Vec<String>) -> Result<()> {
+    pub fn run_instruction(
+        &self,
+        prog_id: Pubkey,
+        payer: Wallet,
+        instruction_name: &str,
+        account_pubkeys: &HashMap<String, Pubkey>,
+        args: Vec<String>,
+    ) -> Result<()> {
         let serialized_args = self.get_serialized_args_for_instruction(instruction_name, args);
-
-        const URL_DEVNET: &str = "https://api.devnet.solana.com";
-        const MNEMONIC: &str =
-            "mirror dry jazz old argue smooth jacket universe minimum latin text love";
-        let ctx = Context::new(URL_DEVNET);
-        let w = wallet_from_seed_phrase(MNEMONIC)?;
-
-        let mut data = sighash("global", "gib_vote").to_vec();
+        let mut data = sighash("global", &instruction_name.to_case(Case::Snake)).to_vec();
         data.extend(serialized_args);
-
-        println!("{:?}", data);
-
-        let prog_id = Pubkey::from_str("WixFUMVqBSTygzeFy9Wuy5XxkeH8xHnUEGvfyyJYqve")?; // es uno de los contratos de prueba de anchor, te deja votar por gm o gn
-
-        // este metodo te pide pasarle dos accounts, el bank (que seria como un argumento) y el signer
-        let acc_bank_address = Pubkey::from_str("78vJRdkATNZm7cJHaLscYu1HZq24EH3FV6Eppx3BS9qA")?;
-        let acc_bank = AccountMeta::new(acc_bank_address, false);
-        let acc_sig = AccountMeta::new(w.key_pair.pubkey(), true);
-
-        // esta funcion te pide solo address, el borsh de todo
-        let instruction = Instruction::new_with_bytes(prog_id, &data, vec![acc_bank, acc_sig]);
-
-        println!("Instruction {:?}", instruction);
-
-        let blockhash = ctx.rpc_client.get_latest_blockhash()?; // agarras blockhash fresco
-
-        // construyo el transaction con el instruction que hice antes, pubkey y keypair de la wallet que manda la transaccion y el blockhash que agarras antes
-        let mut tx = Transaction::new_signed_with_payer(
+        let accounts = self
+            .get_accounts_for_instruction(instruction_name, &account_pubkeys)
+            .unwrap();
+        let instruction = Instruction::new_with_bytes(prog_id, &data, accounts);
+        let blockhash = self.context.rpc_client.get_latest_blockhash()?;
+        let tx = Transaction::new_signed_with_payer(
             &[instruction],
-            Some(&w.key_pair.pubkey()),
-            &[&w.key_pair],
+            Some(&payer.key_pair.pubkey()),
+            &[&payer.key_pair],
             blockhash,
         );
-
         println!("\nTX {:?}", tx);
-
-        ctx.rpc_client
-            .send_and_confirm_transaction_with_spinner(&tx)?; // con esta function le agrega un iconito de carga mientras manda la transaccion
-
-        // aca leo despues de actualizar:
-        let r: VoteBank = ctx.read_account(&acc_bank_address)?; // por ahora uso el BorshDeserialize para leer pero para el final seguramente tengamos que hacer otra cosa
-
-        println!("\nAfter {:?}", r);
+        self.context
+            .rpc_client
+            .send_and_confirm_transaction_with_spinner(&tx)?;
 
         Ok(())
     }
+
+    pub fn read_account<T: BorshDeserialize>(&self, account_pubkey: &Pubkey) -> Result<T> {
+        self.context.read_account(account_pubkey) // por ahora uso el BorshDeserialize para leer pero para el final seguramente tengamos que hacer otra cosa
+    }
 }
-
-/* fn main() -> Result<()> {
-    let program_executor = ProgramExecutor::from("./onchain_voting.json");
-
-    let mut args = Vec::new();
-    args.push("GM".to_string());
-    program_executor.run_instruction("gibVote".to_string(), args);
-    //println!("{:?}", program_executor.get_instructions());
-
-    Ok(())
-} */

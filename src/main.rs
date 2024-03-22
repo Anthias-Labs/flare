@@ -13,11 +13,12 @@ use borsh::{BorshDeserialize, BorshSerialize};
 use program_executor::ProgramExecutor;
 use solana_sdk::address_lookup_table::instruction;
 use solana_sdk::instruction::AccountMeta;
+use std::collections::HashMap;
 use std::io;
 
 use anchor_client;
 use anchor_client::{Client, ClientError, Config, Program};
-use anchor_lang::{AnchorDeserialize, AnchorSerialize};
+use anchor_lang::{accounts, AnchorDeserialize, AnchorSerialize};
 use anyhow::{Error, Result};
 use bip39::Mnemonic;
 use clap::Parser;
@@ -42,24 +43,13 @@ const URL_TESTNET: &str = "https://api.testnet.solana.com";
 const MNEMONIC: &str = "mirror dry jazz old argue smooth jacket universe minimum latin text love";
 const MNEMONIC_2: &str =
     "gift runway carpet cool scale trim beauty company hold beach visa festival";
-
-fn get_context_from_cluster(cluster: &str) -> Context {
-    let cluster_url;
-    match cluster {
-        "devnet" => cluster_url = URL_DEVNET,
-        "mainnet" => cluster_url = URL,
-        "testnet" => cluster_url = URL_TESTNET,
-        &_ => cluster_url = cluster,
-    }
-    Context::new(cluster_url)
-}
-
+/*
 fn test_program() -> Result<()> {
     let prog_addr = "2CQAxft3JDVfMgjW3T73hWYFym1UZZWmuhHgq3JmEYa1";
     let prog_pub = Pubkey::from_str(prog_addr)?;
 
     Ok(())
-}
+} */
 
 #[derive(BorshDeserialize, BorshSerialize)]
 struct Ix {
@@ -90,7 +80,7 @@ pub fn sighash(namespace: &str, name: &str) -> [u8; 8] {
     sighash
 }
 
-fn test_ser() -> Result<()> {
+/* fn test_ser() -> Result<()> {
     let ctx = Context::new(URL_DEVNET);
     let w = wallet_from_seed_phrase(MNEMONIC)?;
     let ix = Ix {
@@ -141,20 +131,37 @@ fn test_ser() -> Result<()> {
     println!("\nAfter {:?}", r);
 
     Ok(())
-}
+} */
 
 fn main() -> Result<()> {
     //test_ser()
 
-    let executor = ProgramExecutor::from("./onchain_voting.json");
+    let executor = ProgramExecutor::from_file("devnet", "data/onchain_voting.json");
     let mut args = Vec::new();
     args.push("GM".to_string());
-    executor.run_instruction("gibVote".to_string(), args)?;
+    let w = wallet_from_seed_phrase(MNEMONIC)?;
+    let mut account_pubkeys: HashMap<String, Pubkey> = HashMap::new();
+    account_pubkeys.insert(
+        String::from("voteAccount"),
+        Pubkey::from_str("78vJRdkATNZm7cJHaLscYu1HZq24EH3FV6Eppx3BS9qA")?,
+    );
+    account_pubkeys.insert(String::from("signer"), w.key_pair.pubkey());
+    executor.run_instruction(
+        Pubkey::from_str("WixFUMVqBSTygzeFy9Wuy5XxkeH8xHnUEGvfyyJYqve").unwrap(),
+        w,
+        "gibVote",
+        &account_pubkeys,
+        args,
+    )?;
+    let account_read: VoteBank = executor
+        .read_account(account_pubkeys.get("voteAccount").unwrap())
+        .unwrap();
+    println!("{:?}", account_read);
     /*
     let args = FlareCli::parse();
     let cluster = args.cluster.to_lowercase();
 
-    let ctx = get_context_from_cluster(&cluster);
+    let ctx = get_context_from_cluster(&cluster); // Cambiar por Context::from_cluster(&cluster)
     match args.command {
         FlareCommand::Balance(balance_data) => {
             let pubkey = Pubkey::from_str(&balance_data.pubkey)?;
@@ -178,9 +185,7 @@ fn main() -> Result<()> {
         }
         FlareCommand::BlockHeight => println!("Block height: {}", ctx.get_block_height()?),
         FlareCommand::Epoch => println!("Epoch number: {}", ctx.get_epoch_number()?),
-    }
-
-    Ok(())*/
+    }*/
 
     Ok(())
 }

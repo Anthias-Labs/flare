@@ -8,7 +8,10 @@ use rand::RngCore;
 use solana_client::rpc_client::RpcClient;
 use solana_program::{native_token::LAMPORTS_PER_SOL, pubkey::Pubkey};
 use solana_sdk::{
-    account, signature::{keypair_from_seed_phrase_and_passphrase, Keypair}, signer::Signer, system_transaction
+    account,
+    signature::{keypair_from_seed_phrase_and_passphrase, Keypair},
+    signer::Signer,
+    system_transaction,
 };
 
 use anchor_client::{Client, ClientError, Program};
@@ -53,6 +56,17 @@ impl Context {
     pub fn new(url: &str) -> Self {
         let rpc_client = RpcClient::new(url);
         Self { rpc_client }
+    }
+
+    pub fn from_cluster(cluster: &str) -> Context {
+        let cluster_url;
+        match cluster {
+            "devnet" => cluster_url = URL_DEVNET,
+            "mainnet" => cluster_url = URL,
+            "testnet" => cluster_url = URL_TESTNET,
+            &_ => cluster_url = cluster,
+        }
+        Context::new(cluster_url)
     }
 
     pub fn get_balance(&self, pubkey: &Pubkey) -> Result<u64> {
@@ -122,7 +136,6 @@ impl Context {
         z.read_to_end(&mut s)?;
         serde_json::from_slice(&s[..]).map_err(Into::into)
     }
-
 
     pub fn read_account<T: BorshDeserialize>(&self, account_address: &Pubkey) -> Result<T> {
         let mut account = self.rpc_client.get_account(account_address)?;
