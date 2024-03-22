@@ -61,7 +61,7 @@ impl ProgramExecutor {
 }
 
 impl ProgramExecutor {
-    fn get_serialized_args_for_instruction_rec(
+    fn get_serialized_args_rec(
         &self,
         type_to_serialize: IdlType,
         args: &Vec<String>,
@@ -143,12 +143,8 @@ impl ProgramExecutor {
                 match kind {
                     IdlTypeDefinitionTy::Struct { fields } => {
                         for field in fields.iter() {
-                            let mut rec_call_to_type = self
-                                .get_serialized_args_for_instruction_rec(
-                                    field.ty.clone(),
-                                    args,
-                                    pos,
-                                );
+                            let mut rec_call_to_type =
+                                self.get_serialized_args_rec(field.ty.clone(), args, pos);
                             serialized_type.append(&mut rec_call_to_type.0);
                             pos = rec_call_to_type.1;
                         }
@@ -175,7 +171,7 @@ impl ProgramExecutor {
                 pos += 1;
                 while counter < arr_size {
                     let mut serialized_position =
-                        self.get_serialized_args_for_instruction_rec(*vec_type.clone(), args, pos);
+                        self.get_serialized_args_rec(*vec_type.clone(), args, pos);
                     serialized_type.append(&mut serialized_position.0);
                     pos = serialized_position.1;
                     counter += 1;
@@ -185,11 +181,8 @@ impl ProgramExecutor {
                 let mut counter = 0;
                 pos += 1;
                 while counter < array_size {
-                    let mut serialized_position = self.get_serialized_args_for_instruction_rec(
-                        *array_type.clone(),
-                        args,
-                        pos,
-                    );
+                    let mut serialized_position =
+                        self.get_serialized_args_rec(*array_type.clone(), args, pos);
                     serialized_type.append(&mut serialized_position.0);
                     pos = serialized_position.1;
                     counter += 1;
@@ -217,15 +210,13 @@ impl ProgramExecutor {
 
     fn get_serialized_args_for_instruction(
         &self,
-        instruction_name: &str,
+        instruction: &IdlInstruction,
         args: Vec<String>,
     ) -> Vec<u8> {
-        let instruction = self.get_instruction_by_name(instruction_name).unwrap();
         let mut pos: usize = 0;
         let mut args_serialized: Vec<u8> = Vec::new();
         for arg in instruction.args.iter() {
-            let mut serialized_for_arg =
-                self.get_serialized_args_for_instruction_rec(arg.ty.clone(), &args, pos);
+            let mut serialized_for_arg = self.get_serialized_args_rec(arg.ty.clone(), &args, pos);
             args_serialized.append(&mut serialized_for_arg.0);
             pos = serialized_for_arg.1;
         }
@@ -234,12 +225,11 @@ impl ProgramExecutor {
 
     fn get_accounts_for_instruction(
         &self,
-        instruction_name: &str,
+        instruction: &IdlInstruction,
         account_pubkeys: &HashMap<String, Pubkey>,
     ) -> Option<Vec<AccountMeta>> {
-        let instruction = self.get_instruction_by_name(instruction_name).unwrap();
         let mut accounts: Vec<AccountMeta> = Vec::new();
-        for account in instruction.accounts {
+        for account in instruction.accounts.iter() {
             if let IdlAccountItem::IdlAccount(account) = account {
                 if let Some(pubkey) = account_pubkeys.get(&account.name) {
                     if account.is_mut {
@@ -282,11 +272,12 @@ impl ProgramExecutor {
         account_pubkeys: &HashMap<String, Pubkey>,
         args: Vec<String>,
     ) -> Result<()> {
-        let serialized_args = self.get_serialized_args_for_instruction(instruction_name, args);
+        let instruction = self.get_instruction_by_name(instruction_name).unwrap();
+        let serialized_args = self.get_serialized_args_for_instruction(&instruction, args);
         let mut data = sighash("global", &instruction_name.to_case(Case::Snake)).to_vec();
         data.extend(serialized_args);
         let accounts = self
-            .get_accounts_for_instruction(instruction_name, &account_pubkeys)
+            .get_accounts_for_instruction(&instruction, &account_pubkeys)
             .unwrap();
         let instruction = Instruction::new_with_bytes(prog_id, &data, accounts);
         let blockhash = self.context.rpc_client.get_latest_blockhash()?;
