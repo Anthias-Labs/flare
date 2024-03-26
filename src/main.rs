@@ -1,4 +1,5 @@
 mod lib;
+use anchor_lang::accounts::account::Account;
 use lib::{new_wallet, sign_message, wallet_from_seed_phrase, Context};
 
 mod args;
@@ -133,6 +134,8 @@ fn test_ser() -> Result<()> {
     let r : VoteBank= ctx.read_account(&acc_bank_address)?; // por ahora uso el BorshDeserialize para leer pero para el final seguramente tengamos que hacer otra cosa
 
     println!("\nAfter {:?}", r);
+
+    
 
     Ok(())
 }
