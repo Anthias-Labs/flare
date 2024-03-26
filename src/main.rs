@@ -29,6 +29,9 @@ use solana_sdk::{
     transaction::Transaction,
 };
 use std::str::FromStr;
+use sol_chainsaw;
+use std::fs;
+
 const URL: &str = "https://api.mainnet-beta.solana.com";
 
 const URL_DEVNET: &str = "https://api.devnet.solana.com";
@@ -132,8 +135,35 @@ fn test_ser() -> Result<()> {
 
     // aca leo despues de actualizar:
     let r : VoteBank= ctx.read_account(&acc_bank_address)?; // por ahora uso el BorshDeserialize para leer pero para el final seguramente tengamos que hacer otra cosa
+    
+    // forma con idl:
+    let idl_string = fs::read_to_string("../onchain_voting.json")?;  // string JSON del idl                          
+    
+    // mantener asi
+    let opts = sol_chainsaw::JsonSerializationOpts {
+        pubkey_as_base58: true,
+        n64_as_string: false,
+        n128_as_string: true,
+    };
+    
+    // creo el objeto
+    let mut chainsaw = sol_chainsaw::ChainsawDeserializer::new(&opts);
 
-    println!("\nAfter {:?}", r);
+    // le agregas el string JSON del idl
+    // IMPORTANTE: el idl tiene que tener en metadata el origin ("origin": "Anchor"), si no tira error
+    chainsaw.add_idl_json(prog_id.to_string(), &idl_string, sol_chainsaw::IdlProvider::Anchor)?;
+
+    // agarro los datos del account
+    let acc_data = ctx.fetch_account(&acc_bank_address)?;
+    
+    // convierto a slice
+    let mut acc_data_slice: &[u8] = &acc_data;
+
+    // con esto lo convierto a un string JSON
+    let de = chainsaw.deserialize_account_to_json_string(&prog_id.to_string(), &mut acc_data_slice)?;
+
+    println!("\nAfter 1 {:?}", r);
+    println!("\nAfter 2 {}", de);
 
     
 

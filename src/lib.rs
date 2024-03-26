@@ -123,9 +123,14 @@ impl Context {
         serde_json::from_slice(&s[..]).map_err(Into::into)
     }
 
+    pub fn fetch_account(&self, account_address: &Pubkey) -> Result<Vec<u8>> {
+        let account = self.rpc_client.get_account(account_address)?;
+        let data = account.data.to_vec();
+        Ok(data)
+    }
 
     pub fn read_account<T: BorshDeserialize>(&self, account_address: &Pubkey) -> Result<T> {
-        let mut account = self.rpc_client.get_account(account_address)?;
+        let account = self.rpc_client.get_account(account_address)?;
         let mut data = &account.data[8..];
         let r: T = BorshDeserialize::deserialize(&mut data)?;
         Ok(r)
