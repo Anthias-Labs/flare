@@ -143,6 +143,12 @@ impl Context {
         let r: T = BorshDeserialize::deserialize(&mut data)?;
         Ok(r)
     }
+
+    pub fn fetch_account(&self, account_address: &Pubkey) -> Result<Vec<u8>> {
+        let account = self.rpc_client.get_account(account_address)?;
+        let data = account.data.to_vec();
+        Ok(data)
+    }
 }
 
 pub fn generate_entropy() -> [u8; 16] {

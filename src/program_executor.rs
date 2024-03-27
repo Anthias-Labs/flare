@@ -7,6 +7,7 @@ use anchor_syn::idl::types::{
 use anyhow::Result;
 use borsh::{BorshDeserialize, BorshSerialize};
 use convert_case::{Case, Casing};
+use serde_json::{Map, Value};
 use solana_sdk::instruction::{AccountMeta, Instruction};
 use solana_sdk::signer::Signer;
 use solana_sdk::transaction::Transaction;
@@ -41,22 +42,32 @@ pub struct ProgramExecutor {
 
 // CAMBIAR ESTO PARA QUE SE PUEDA INSTANCIAR POR FILE O POR GET_IDL
 impl ProgramExecutor {
+    fn get_metadata() -> Map<String, Value> {
+        let mut metadata = Map::new();
+        metadata.insert("origin".to_string(), Value::String("anchor".to_string()));
+        metadata
+    }
+
+    fn get_idl_string(&self) -> String {
+        serde_json::to_string(&self.idl).unwrap()
+    }
+
     pub fn from_file(cluster: &str, path: &str) -> Self {
+        let mut idl: Idl =
+            serde_json::from_str(&fs::read_to_string(path).expect("Cant IDL (change message)"))
+                .expect("Cant JSON (change this message)");
+        idl.metadata = Some(Value::Object(ProgramExecutor::get_metadata()));
         ProgramExecutor {
-            idl: serde_json::from_str(
-                &fs::read_to_string(path).expect("Cant IDL (change message)"),
-            )
-            .expect("Cant JSON (change this message)"),
+            idl,
             context: Context::from_cluster(cluster),
         }
     }
 
     pub fn from_program_address(cluster: &str, program_address: &str) -> Self {
         let context = Context::from_cluster(cluster);
-        ProgramExecutor {
-            idl: context.get_idl(program_address).unwrap(),
-            context,
-        }
+        let mut idl = context.get_idl(program_address).unwrap();
+        idl.metadata = Some(Value::Object(ProgramExecutor::get_metadata()));
+        ProgramExecutor { idl, context }
     }
 }
 
@@ -297,5 +308,24 @@ impl ProgramExecutor {
 
     pub fn read_account<T: BorshDeserialize>(&self, account_pubkey: &Pubkey) -> Result<T> {
         self.context.read_account(account_pubkey) // por ahora uso el BorshDeserialize para leer pero para el final seguramente tengamos que hacer otra cosa
+    }
+
+    pub fn fetch_account(&self, prog_id: &Pubkey, account_pubkey: &Pubkey) -> Result<String> {
+        let idl_string = self.get_idl_string();
+        let opts = sol_chainsaw::JsonSerializationOpts {
+            pubkey_as_base58: true,
+            n64_as_string: false,
+            n128_as_string: true,
+        };
+        let mut chainsaw = sol_chainsaw::ChainsawDeserializer::new(&opts);
+        chainsaw.add_idl_json(
+            prog_id.to_string(),
+            &idl_string,
+            sol_chainsaw::IdlProvider::Anchor,
+        )?;
+        let acc_data = self.context.fetch_account(&account_pubkey)?;
+        let mut acc_data_slice: &[u8] = &acc_data;
+        Ok(chainsaw
+            .deserialize_account_to_json_string(&prog_id.to_string(), &mut acc_data_slice)?)
     }
 }

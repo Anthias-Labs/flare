@@ -146,15 +146,10 @@ fn main() -> Result<()> {
         Pubkey::from_str("78vJRdkATNZm7cJHaLscYu1HZq24EH3FV6Eppx3BS9qA")?,
     );
     account_pubkeys.insert(String::from("signer"), w.key_pair.pubkey());
-    executor.run_instruction(
-        Pubkey::from_str("WixFUMVqBSTygzeFy9Wuy5XxkeH8xHnUEGvfyyJYqve").unwrap(),
-        w,
-        "gibVote",
-        &account_pubkeys,
-        args,
-    )?;
-    let account_read: VoteBank = executor
-        .read_account(account_pubkeys.get("voteAccount").unwrap())
+    let prog_id = Pubkey::from_str("WixFUMVqBSTygzeFy9Wuy5XxkeH8xHnUEGvfyyJYqve").unwrap();
+    executor.run_instruction(prog_id, w, "gibVote", &account_pubkeys, args)?;
+    let account_read = executor
+        .fetch_account(&prog_id, account_pubkeys.get("voteAccount").unwrap())
         .unwrap();
     println!("{:?}", account_read);
     /*
