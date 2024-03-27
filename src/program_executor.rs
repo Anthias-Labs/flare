@@ -42,6 +42,11 @@ pub struct ProgramExecutor {
 
 // CAMBIAR ESTO PARA QUE SE PUEDA INSTANCIAR POR FILE O POR GET_IDL
 impl ProgramExecutor {
+    fn get_idl_from_file(path: &str) -> Idl {
+        serde_json::from_str(&fs::read_to_string(path).expect("Cant IDL (change message)"))
+            .expect("Cant JSON (change this message)")
+    }
+
     fn get_metadata() -> Map<String, Value> {
         let mut metadata = Map::new();
         metadata.insert("origin".to_string(), Value::String("anchor".to_string()));
@@ -53,18 +58,23 @@ impl ProgramExecutor {
     }
 
     pub fn from_file(cluster: &str, path: &str) -> Self {
-        let mut idl: Idl =
-            serde_json::from_str(&fs::read_to_string(path).expect("Cant IDL (change message)"))
-                .expect("Cant JSON (change this message)");
-        idl.metadata = Some(Value::Object(ProgramExecutor::get_metadata()));
-        ProgramExecutor {
-            idl,
-            context: Context::from_cluster(cluster),
-        }
+        ProgramExecutor::from_file_with_context(Context::from_cluster(cluster), path)
     }
 
     pub fn from_program_address(cluster: &str, program_address: &str) -> Self {
-        let context = Context::from_cluster(cluster);
+        ProgramExecutor::from_program_address_with_context(
+            Context::from_cluster(cluster),
+            program_address,
+        )
+    }
+
+    pub fn from_file_with_context(context: Context, path: &str) -> Self {
+        let mut idl: Idl = ProgramExecutor::get_idl_from_file(path);
+        idl.metadata = Some(Value::Object(ProgramExecutor::get_metadata()));
+        ProgramExecutor { idl, context }
+    }
+
+    pub fn from_program_address_with_context(context: Context, program_address: &str) -> Self {
         let mut idl = context.get_idl(program_address).unwrap();
         idl.metadata = Some(Value::Object(ProgramExecutor::get_metadata()));
         ProgramExecutor { idl, context }
@@ -237,12 +247,13 @@ impl ProgramExecutor {
     fn get_accounts_for_instruction(
         &self,
         instruction: &IdlInstruction,
-        account_pubkeys: &HashMap<String, Pubkey>,
+        account_pubkeys: &Vec<Pubkey>,
     ) -> Option<Vec<AccountMeta>> {
         let mut accounts: Vec<AccountMeta> = Vec::new();
+        let mut it: usize = 0;
         for account in instruction.accounts.iter() {
             if let IdlAccountItem::IdlAccount(account) = account {
-                if let Some(pubkey) = account_pubkeys.get(&account.name) {
+                if let Some(pubkey) = account_pubkeys.get(it) {
                     if account.is_mut {
                         accounts.push(AccountMeta::new(*pubkey, account.is_signer))
                     } else {
@@ -252,6 +263,7 @@ impl ProgramExecutor {
                     return None;
                 }
             }
+            it += 1;
         }
         return Some(accounts);
     }
@@ -280,7 +292,7 @@ impl ProgramExecutor {
         prog_id: Pubkey,
         payer: Wallet,
         instruction_name: &str,
-        account_pubkeys: &HashMap<String, Pubkey>,
+        account_pubkeys: &Vec<Pubkey>,
         args: Vec<String>,
     ) -> Result<()> {
         let instruction = self.get_instruction_by_name(instruction_name).unwrap();
@@ -298,7 +310,7 @@ impl ProgramExecutor {
             &[&payer.key_pair],
             blockhash,
         );
-        println!("\nTX {:?}", tx);
+        //println!("\nTX {:?}", tx);
         self.context
             .rpc_client
             .send_and_confirm_transaction_with_spinner(&tx)?;

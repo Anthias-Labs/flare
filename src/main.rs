@@ -136,27 +136,29 @@ pub fn sighash(namespace: &str, name: &str) -> [u8; 8] {
 fn main() -> Result<()> {
     //test_ser()
 
-    let executor = ProgramExecutor::from_file("devnet", "data/onchain_voting.json");
+    /*let executor = ProgramExecutor::from_file("devnet", "data/onchain_voting.json");
     let mut args = Vec::new();
     args.push("GM".to_string());
     let w = wallet_from_seed_phrase(MNEMONIC)?;
-    let mut account_pubkeys: HashMap<String, Pubkey> = HashMap::new();
-    account_pubkeys.insert(
-        String::from("voteAccount"),
-        Pubkey::from_str("78vJRdkATNZm7cJHaLscYu1HZq24EH3FV6Eppx3BS9qA")?,
-    );
-    account_pubkeys.insert(String::from("signer"), w.key_pair.pubkey());
+    let mut account_pubkeys: Vec<Pubkey> = Vec::new();
+    account_pubkeys.push(Pubkey::from_str(
+        "78vJRdkATNZm7cJHaLscYu1HZq24EH3FV6Eppx3BS9qA",
+    )?);
+    account_pubkeys.push(w.key_pair.pubkey());
     let prog_id = Pubkey::from_str("WixFUMVqBSTygzeFy9Wuy5XxkeH8xHnUEGvfyyJYqve").unwrap();
     executor.run_instruction(prog_id, w, "gibVote", &account_pubkeys, args)?;
     let account_read = executor
-        .fetch_account(&prog_id, account_pubkeys.get("voteAccount").unwrap())
+        .fetch_account(
+            &prog_id,
+            &Pubkey::from_str("78vJRdkATNZm7cJHaLscYu1HZq24EH3FV6Eppx3BS9qA")?,
+        )
         .unwrap();
-    println!("{:?}", account_read);
-    /*
+    println!("{}", account_read);*/
+
     let args = FlareCli::parse();
     let cluster = args.cluster.to_lowercase();
 
-    let ctx = get_context_from_cluster(&cluster); // Cambiar por Context::from_cluster(&cluster)
+    let ctx = Context::from_cluster(&cluster); // Cambiar por Context::from_cluster(&cluster)
     match args.command {
         FlareCommand::Balance(balance_data) => {
             let pubkey = Pubkey::from_str(&balance_data.pubkey)?;
@@ -180,7 +182,36 @@ fn main() -> Result<()> {
         }
         FlareCommand::BlockHeight => println!("Block height: {}", ctx.get_block_height()?),
         FlareCommand::Epoch => println!("Epoch number: {}", ctx.get_epoch_number()?),
-    }*/
+        FlareCommand::Call(call_data) => {
+            let prog_id = Pubkey::from_str(&call_data.program)?;
+            let payer = wallet_from_seed_phrase(&call_data.mnemonic)?;
+            let instruction_name = call_data.instruction_name;
+            let args = call_data.args; // Esta lectura hay que cambiarla para no pasar signer dos veces
+            let mut account_pubkeys = Vec::new();
+            for pubkey_str in call_data.accounts {
+                account_pubkeys.push(Pubkey::from_str(&pubkey_str)?)
+            }
+            let idl_path = call_data.idl;
+            let program_executor = ProgramExecutor::from_file_with_context(ctx, &idl_path);
+            program_executor.run_instruction(
+                prog_id,
+                payer,
+                &instruction_name,
+                &account_pubkeys,
+                args,
+            );
+        }
+        FlareCommand::ReadAccount(read_account_data) => {
+            let prog_id = Pubkey::from_str(&read_account_data.program)?;
+            let account_pubkey = Pubkey::from_str(&read_account_data.account)?;
+            let idl_path = read_account_data.idl;
+            let program_executor = ProgramExecutor::from_file_with_context(ctx, &idl_path);
+            println!(
+                "{}",
+                program_executor.fetch_account(&prog_id, &account_pubkey)?
+            );
+        }
+    }
 
     Ok(())
 }

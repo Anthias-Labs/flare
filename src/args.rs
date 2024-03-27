@@ -33,6 +33,12 @@ pub enum FlareCommand {
 
     /// Recovers a wallet from its mnemonic
     WalletRecover(WalletRecoverCommand),
+
+    /// Call to a program
+    Call(CallCommand),
+
+    /// Read account from program
+    ReadAccount(ReadAccountCommand),
 }
 
 #[derive(Debug, Args)]
@@ -70,4 +76,46 @@ pub struct WalletRecoverCommand {
     /// Mnemonic
     #[arg(short, long)]
     pub mnemonic: String,
+}
+
+#[derive(Debug, Args)]
+pub struct CallCommand {
+    /// Program pubkey
+    #[arg(short, long)]
+    pub program: String,
+
+    /// Mnemonic
+    #[arg(short, long)]
+    pub mnemonic: String,
+
+    /// Instruction name
+    pub instruction_name: String,
+
+    /// Arguments separated by comma
+    #[clap(value_delimiter = ',', num_args = 0..)]
+    pub args: Vec<String>,
+
+    // Account pubkeys separated by comma
+    #[arg(short, long)]
+    #[clap(value_delimiter = ',', num_args = 1..)]
+    pub accounts: Vec<String>,
+
+    /// Idl file path
+    #[arg(short, long)]
+    pub idl: String,
+}
+
+#[derive(Debug, Args)]
+pub struct ReadAccountCommand {
+    /// Program pubkey
+    #[arg(short, long)]
+    pub program: String,
+
+    /// Account pubkey
+    #[arg(short, long)]
+    pub account: String,
+
+    /// Idl file path
+    #[arg(short, long)]
+    pub idl: String,
 }
