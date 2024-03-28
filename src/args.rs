@@ -91,14 +91,14 @@ pub struct CallCommand {
     /// Instruction name
     pub instruction_name: String,
 
+    // Account pubkeys separated by comma
+    #[arg(short, long)]
+    #[clap(required = true, value_delimiter = ',', num_args = 1..)]
+    pub accounts: Vec<String>,
+
     /// Arguments separated by comma
     #[clap(value_delimiter = ',', num_args = 0..)]
     pub args: Vec<String>,
-
-    // Account pubkeys separated by comma
-    #[arg(short, long)]
-    #[clap(value_delimiter = ',', num_args = 1..)]
-    pub accounts: Vec<String>,
 
     /// Idl file path
     #[arg(short, long)]
