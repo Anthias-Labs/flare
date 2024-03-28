@@ -97,7 +97,7 @@ pub struct CallCommand {
     pub accounts: Vec<String>,
 
     /// Arguments separated by comma
-    #[clap(value_delimiter = ',', num_args = 0..)]
+    #[clap(required = true, value_delimiter = ',', num_args = 0..)]
     pub args: Vec<String>,
 
     /// Idl file path
