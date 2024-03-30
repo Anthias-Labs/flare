@@ -137,6 +137,10 @@ fn main() -> Result<()> {
             file.write(json.as_bytes())?;
             println!("Wrote to {}", &path);
         }
+        FlareCommand::AddressDerive(address_derive_data) => {
+            let wallet = read_wallet_file(&address_derive_data.keypair)?;
+            println!("{}", wallet.key_pair.pubkey());
+        }
     }
 
     Ok(())

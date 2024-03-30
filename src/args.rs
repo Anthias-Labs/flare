@@ -34,6 +34,9 @@ pub enum FlareCommand {
     /// Recovers a wallet from its mnemonic
     WalletRecover(WalletRecoverCommand),
 
+    /// Derives the address from a keypair file
+    AddressDerive(AddressDeriveCommand),
+
     /// Call to a program
     Call(CallCommand),
 
@@ -140,5 +143,13 @@ pub struct FetchIDLCommand {
     /// Program address
     #[arg(short, long)]
     pub program: String,
+
+}
+
+#[derive(Debug, Args)]
+pub struct AddressDeriveCommand {
+    /// Keypair file
+    #[arg(short, long)]
+    pub keypair: String,
 
 }
