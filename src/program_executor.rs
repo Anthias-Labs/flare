@@ -12,7 +12,6 @@ use solana_sdk::instruction::{AccountMeta, Instruction};
 use solana_sdk::signer::Signer;
 use solana_sdk::transaction::Transaction;
 
-use crate::sighash;
 
 use crate::lib::{Context, Wallet};
 
@@ -33,6 +32,17 @@ macro_rules! serialize_by_type {
             .unwrap()
             .serialize($to_save_serialize);
     };
+}
+
+pub fn sighash(namespace: &str, name: &str) -> [u8; 8] {
+    let preimage = format!("{namespace}:{name}");
+
+    let mut sighash = [0u8; 8];
+    sighash.copy_from_slice(
+        &anchor_client::anchor_lang::solana_program::hash::hash(preimage.as_bytes()).to_bytes()
+            [..8],
+    );
+    sighash
 }
 
 pub struct ProgramExecutor {

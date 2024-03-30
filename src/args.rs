@@ -49,9 +49,13 @@ pub struct BalanceCommand {
 
 #[derive(Debug, Args)]
 pub struct SendCommand {
+    /// Keypair file
+    #[arg(short, long)]    
+    pub keypair: Option<String>,
+
     /// Mnemonic
     #[arg(short, long)]
-    pub mnemonic: String,
+    pub mnemonic: Option<String>,
 
     /// Target pubkey
     #[arg(short, long)]
@@ -63,9 +67,13 @@ pub struct SendCommand {
 
 #[derive(Debug, Args)]
 pub struct SignCommand {
+    /// Keypair file
+    #[arg(short, long)]    
+    pub keypair: Option<String>,
+
     /// Mnemonic
     #[arg(short, long)]
-    pub mnemonic: String,
+    pub mnemonic: Option<String>,
 
     /// Message
     pub msg: String,
@@ -80,13 +88,17 @@ pub struct WalletRecoverCommand {
 
 #[derive(Debug, Args)]
 pub struct CallCommand {
-    /// Program pubkey
+    /// Program address
     #[arg(short, long)]
     pub program: String,
 
+    /// Keypair file
+    #[arg(short, long)]    
+    pub keypair: Option<String>,
+
     /// Mnemonic
     #[arg(short, long)]
-    pub mnemonic: String,
+    pub mnemonic: Option<String>,
 
     /// Instruction name
     pub instruction_name: String,
