@@ -39,6 +39,9 @@ pub enum FlareCommand {
 
     /// Read account from program
     ReadAccount(ReadAccountCommand),
+
+    /// Fetch IDL from program
+    FetchIDL(FetchIDLCommand),
 }
 
 #[derive(Debug, Args)]
@@ -119,7 +122,7 @@ pub struct CallCommand {
 
 #[derive(Debug, Args)]
 pub struct ReadAccountCommand {
-    /// Program pubkey
+    /// Program address
     #[arg(short, long)]
     pub program: String,
 
@@ -130,4 +133,12 @@ pub struct ReadAccountCommand {
     /// Idl file path
     #[arg(short, long)]
     pub idl: String,
+}
+
+#[derive(Debug, Args)]
+pub struct FetchIDLCommand {
+    /// Program address
+    #[arg(short, long)]
+    pub program: String,
+
 }

@@ -14,7 +14,8 @@ use program_executor::ProgramExecutor;
 use solana_sdk::address_lookup_table::instruction;
 use solana_sdk::instruction::AccountMeta;
 use std::collections::HashMap;
-use std::io;
+use std::fs::File;
+use std::io::{self, Write};
 
 use anchor_client;
 use anchor_client::{Client, ClientError, Config, Program};
@@ -126,6 +127,15 @@ fn main() -> Result<()> {
                 "{}",
                 program_executor.fetch_account(&prog_id, &account_pubkey)?
             );
+        }
+        FlareCommand::FetchIDL(fetch_idl_data) => {
+            let idl = ctx.get_idl(&fetch_idl_data.program)?;
+            let json = serde_json::to_string_pretty(&idl)?;
+            let path = format!("{}.json", &fetch_idl_data.program);
+            println!("{}", json);
+            let mut file = File::create(&path)?;
+            file.write(json.as_bytes())?;
+            println!("Wrote to {}", &path);
         }
     }
 
