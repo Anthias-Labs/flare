@@ -41,9 +41,6 @@ const URL: &str = "https://api.mainnet-beta.solana.com";
 const URL_DEVNET: &str = "https://api.devnet.solana.com";
 const URL_TESTNET: &str = "https://api.testnet.solana.com";
 
-const MNEMONIC: &str = "mirror dry jazz old argue smooth jacket universe minimum latin text love";
-const MNEMONIC_2: &str =
-    "gift runway carpet cool scale trim beauty company hold beach visa festival";
 
 fn get_wallet(mnemonic: &Option<String>, path: &Option<String>) -> Result<Wallet> {
     let wallet = match (mnemonic, path) {

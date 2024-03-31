@@ -7,7 +7,7 @@ pub struct FlareCli {
     pub command: FlareCommand,
 
     /// Sets cluster (can be devnet, mainnet, testnet or a specific url)
-    #[arg(short, long, default_value_t = String::from("devnet"))]
+    #[arg(short, long, default_value_t = String::from("mainnet"))]
     pub cluster: String,
 }
 

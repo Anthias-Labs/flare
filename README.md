@@ -12,6 +12,11 @@ Please make sure you have Cargo in your system.
 4. Move into the binary location `cd target/debug`
 5. Run the compiled binary with `./flare`
 
+## Usage
+To test the tool and see example usage:
+1. Write a mnemonic with some balance in devnet to a `.mnemonic` file in root.
+2. Run `./example-usage.sh`. This will build the tool and test every subcommand.
+
 ## Functions
 ### Chain and Transaction Interactions:
 `flare send`: allows sending SOL to an account
