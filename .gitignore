@@ -19,3 +19,7 @@ Cargo.lock
 
 # Directory for data files
 data
+
+.mnemonic
+./flare
+./*.json
