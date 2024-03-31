@@ -12,6 +12,11 @@ Please make sure you have Cargo in your system.
 4. Move into the binary location `cd target/debug`
 5. Run the compiled binary with `./flare`
 
+## Usage
+To test the tool and see example usage:
+1. Write a mnemonic with some balance in devnet to a `.mnemonic` file in root.
+2. Run `./example-usage.sh`. This will build the tool and test every subcommand.
+
 ## Functions
 ### Chain and Transaction Interactions:
 `flare send`: allows sending SOL to an account
@@ -22,6 +27,12 @@ Please make sure you have Cargo in your system.
 
 `flare block-height`: get the current epoch number
 
+`flare call`: calls an arbitrary Anchor program method
+
+`flare read-account`: reads and deserializes an arbitrary account
+
+`flare fetch-idl`: fetches the published IDL from an Anchor program
+
 
 ### Wallet Management:
 `flare wallet-create`: generates keypair and mnemonic for a new wallet
@@ -29,8 +40,9 @@ Please make sure you have Cargo in your system.
 `flare wallet-recover`: gets keypair from a given mnemonic
 
 ### Utils (Additional):
-
 `flare sign`: sign an arbitrary message with a given private key
+
+`flare address-derive`: derives address from a keypair file
 
 ## Roadmap
 - [X] Reading wallet SOL balance from chain
@@ -39,9 +51,12 @@ Please make sure you have Cargo in your system.
 - [X] Creating wallets and recovering from mnemonic
 - [X] Signing arbitrary messages
 - [X] Adding CLI options for handling different cluster RPCs
-- [ ] Calling methods and reading state from on-chain programs
-- [ ] Adding utils for common format convertions
-- [ ] File-based  wallet and config management (storage and read)
+- [X] Calling methods and reading state from on-chain programs
+- [X] Adding utils for common operations
+- [X] File-based  wallet and config management (storage and read)
+- [ ] Improve documentation and error messages
+- [ ] Add support for multiple signers on an instruction
+- [ ] Add support for Program Derived Addresses
 
 ## About
 Flare is the first tool from Solstice, the toolkit for developers on Solana. The development of Flare was originally funded by a grant from the Solana Foundation to Anthias Labs in January of 2024. Flare’s public launch is scheduled for April of 2024.

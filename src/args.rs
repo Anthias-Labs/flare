@@ -7,7 +7,7 @@ pub struct FlareCli {
     pub command: FlareCommand,
 
     /// Sets cluster (can be devnet, mainnet, testnet or a specific url)
-    #[arg(short, long, default_value_t = String::from("devnet"))]
+    #[arg(short, long, default_value_t = String::from("mainnet"))]
     pub cluster: String,
 }
 
@@ -33,6 +33,18 @@ pub enum FlareCommand {
 
     /// Recovers a wallet from its mnemonic
     WalletRecover(WalletRecoverCommand),
+
+    /// Derives the address from a keypair file
+    AddressDerive(AddressDeriveCommand),
+
+    /// Call to a program
+    Call(CallCommand),
+
+    /// Read account from program
+    ReadAccount(ReadAccountCommand),
+
+    /// Fetch IDL from program
+    FetchIDL(FetchIDLCommand),
 }
 
 #[derive(Debug, Args)]
@@ -43,9 +55,13 @@ pub struct BalanceCommand {
 
 #[derive(Debug, Args)]
 pub struct SendCommand {
+    /// Keypair file
+    #[arg(short, long)]    
+    pub keypair: Option<String>,
+
     /// Mnemonic
     #[arg(short, long)]
-    pub mnemonic: String,
+    pub mnemonic: Option<String>,
 
     /// Target pubkey
     #[arg(short, long)]
@@ -57,9 +73,13 @@ pub struct SendCommand {
 
 #[derive(Debug, Args)]
 pub struct SignCommand {
+    /// Keypair file
+    #[arg(short, long)]    
+    pub keypair: Option<String>,
+
     /// Mnemonic
     #[arg(short, long)]
-    pub mnemonic: String,
+    pub mnemonic: Option<String>,
 
     /// Message
     pub msg: String,
@@ -70,4 +90,66 @@ pub struct WalletRecoverCommand {
     /// Mnemonic
     #[arg(short, long)]
     pub mnemonic: String,
+}
+
+#[derive(Debug, Args)]
+pub struct CallCommand {
+    /// Program address
+    #[arg(short, long)]
+    pub program: String,
+
+    /// Keypair file
+    #[arg(short, long)]    
+    pub keypair: Option<String>,
+
+    /// Mnemonic
+    #[arg(short, long)]
+    pub mnemonic: Option<String>,
+
+    /// Instruction name
+    pub instruction_name: String,
+
+    // Account pubkeys separated by comma
+    #[arg(short, long)]
+    #[clap(required = true, value_delimiter = ',', num_args = 1..)]
+    pub accounts: Vec<String>,
+
+    /// Arguments separated by comma
+    #[clap(value_delimiter = ',', num_args = 0..)]
+    pub args: Vec<String>,
+
+    /// Idl file path
+    #[arg(short, long)]
+    pub idl: String,
+}
+
+#[derive(Debug, Args)]
+pub struct ReadAccountCommand {
+    /// Program address
+    #[arg(short, long)]
+    pub program: String,
+
+    /// Account pubkey
+    #[arg(short, long)]
+    pub account: String,
+
+    /// Idl file path
+    #[arg(short, long)]
+    pub idl: String,
+}
+
+#[derive(Debug, Args)]
+pub struct FetchIDLCommand {
+    /// Program address
+    #[arg(short, long)]
+    pub program: String,
+
+}
+
+#[derive(Debug, Args)]
+pub struct AddressDeriveCommand {
+    /// Keypair file
+    #[arg(short, long)]
+    pub keypair: String,
+
 }
