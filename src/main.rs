@@ -1,5 +1,8 @@
 mod lib;
-use lib::{new_wallet, read_wallet_file, write_wallet_file, sign_message, wallet_from_seed_phrase, Context, Wallet};
+use lib::{
+    new_wallet, read_wallet_file, sign_message, wallet_from_seed_phrase, write_wallet_file,
+    Context, Wallet,
+};
 
 mod idl;
 mod program_executor;
@@ -11,10 +14,11 @@ use args::{FlareCli, FlareCommand};
 //use borsh::*;
 use borsh::{BorshDeserialize, BorshSerialize};
 use program_executor::ProgramExecutor;
+use serde_json::Value;
 use solana_sdk::address_lookup_table::instruction;
 use solana_sdk::instruction::AccountMeta;
 use std::collections::HashMap;
-use std::fs::File;
+use std::fs::{self, File};
 use std::io::{self, Write};
 
 use anchor_client;
@@ -41,23 +45,18 @@ const URL: &str = "https://api.mainnet-beta.solana.com";
 const URL_DEVNET: &str = "https://api.devnet.solana.com";
 const URL_TESTNET: &str = "https://api.testnet.solana.com";
 
-
 fn get_wallet(mnemonic: &Option<String>, path: &Option<String>) -> Result<Wallet> {
     let wallet = match (mnemonic, path) {
         (Some(_), Some(_)) => {
             println!("Arguments must provide either a mnemonic or a keypair path, not both");
             return Err(Error::msg("Both mnemonic and keypair provided"));
-        },
+        }
         (None, None) => {
             println!("At least one of mnemonic or keypair must be provided");
             return Err(Error::msg("Neither mnemonic or keypair provided"));
-        },
-        (Some(m), None) => {
-            return wallet_from_seed_phrase(&m)
-        },
-        (None, Some(p)) => {
-            return read_wallet_file(&p)
         }
+        (Some(m), None) => return wallet_from_seed_phrase(&m),
+        (None, Some(p)) => return read_wallet_file(&p),
     };
 }
 
@@ -101,15 +100,38 @@ fn main() -> Result<()> {
             let payer = get_wallet(&call_data.mnemonic, &call_data.keypair)?;
             let instruction_name = call_data.instruction_name;
             let args = call_data.args; // Esta lectura hay que cambiarla para no pasar signer dos veces
-            let mut account_pubkeys = Vec::new();
-            for pubkey_str in call_data.accounts {
-                account_pubkeys.push(Pubkey::from_str(&pubkey_str)?)
-            }
+            let mut account_pubkeys: Vec<Pubkey> = Vec::new();
+            let mut signers_keypairs: Vec<Keypair> = Vec::new();
             let idl_path = call_data.idl;
             let program_executor = ProgramExecutor::from_file_with_context(ctx, &idl_path);
+            if let Some(accounts) = call_data.accounts {
+                for pubkey_str in accounts {
+                    account_pubkeys.push(Pubkey::from_str(&pubkey_str)?)
+                }
+                if let Some(signers) = call_data.signers {
+                    // logic to read signers from CLI
+                } else {
+                    panic!("Missing signers");
+                }
+            } else if let Some(accounts_file) = call_data.accounts_file {
+                let pubkeys_and_keypairs = program_executor
+                    .get_account_and_signers_from_file_for_instruction(
+                        &instruction_name,
+                        accounts_file,
+                    );
+                account_pubkeys = pubkeys_and_keypairs.0;
+                signers_keypairs = pubkeys_and_keypairs.1;
+            } else {
+                panic!("Missing accounts and signers");
+            }
+            let mut signers_refs: Vec<&Keypair> = Vec::new();
+            signers_keypairs
+                .iter()
+                .for_each(|keypair| signers_refs.push(keypair));
             program_executor.run_instruction(
                 prog_id,
-                payer,
+                &payer,
+                &signers_refs,
                 &instruction_name,
                 &account_pubkeys,
                 args,

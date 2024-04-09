@@ -56,7 +56,7 @@ pub struct BalanceCommand {
 #[derive(Debug, Args)]
 pub struct SendCommand {
     /// Keypair file
-    #[arg(short, long)]    
+    #[arg(short, long)]
     pub keypair: Option<String>,
 
     /// Mnemonic
@@ -74,7 +74,7 @@ pub struct SendCommand {
 #[derive(Debug, Args)]
 pub struct SignCommand {
     /// Keypair file
-    #[arg(short, long)]    
+    #[arg(short, long)]
     pub keypair: Option<String>,
 
     /// Mnemonic
@@ -99,7 +99,7 @@ pub struct CallCommand {
     pub program: String,
 
     /// Keypair file
-    #[arg(short, long)]    
+    #[arg(short, long)]
     pub keypair: Option<String>,
 
     /// Mnemonic
@@ -109,10 +109,20 @@ pub struct CallCommand {
     /// Instruction name
     pub instruction_name: String,
 
-    // Account pubkeys separated by comma
+    /// Account pubkeys separated by comma
     #[arg(short, long)]
-    #[clap(required = true, value_delimiter = ',', num_args = 1..)]
-    pub accounts: Vec<String>,
+    #[clap(required_unless_present = "accounts_file", value_delimiter = ',', num_args = 1..)]
+    pub accounts: Option<Vec<String>>,
+
+    /// Signers
+    #[arg(short, long)]
+    #[clap(required_unless_present = "accounts_file", value_delimiter = ',', num_args = 1..)]
+    pub signers: Option<Vec<String>>,
+
+    /// Accounts file
+    #[arg(short = 'f', long)]
+    #[clap(required_unless_present = "accounts")]
+    pub accounts_file: Option<String>,
 
     /// Arguments separated by comma
     #[clap(value_delimiter = ',', num_args = 0..)]
@@ -143,7 +153,6 @@ pub struct FetchIDLCommand {
     /// Program address
     #[arg(short, long)]
     pub program: String,
-
 }
 
 #[derive(Debug, Args)]
@@ -151,5 +160,4 @@ pub struct AddressDeriveCommand {
     /// Keypair file
     #[arg(short, long)]
     pub keypair: String,
-
 }

@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::fs;
+use std::str::FromStr;
 
 use anchor_syn::idl::types::{
     Idl, IdlAccountItem, IdlInstruction, IdlType, IdlTypeDefinition, IdlTypeDefinitionTy,
@@ -9,11 +10,11 @@ use borsh::{BorshDeserialize, BorshSerialize};
 use convert_case::{Case, Casing};
 use serde_json::{Map, Value};
 use solana_sdk::instruction::{AccountMeta, Instruction};
+use solana_sdk::signature::Keypair;
 use solana_sdk::signer::Signer;
 use solana_sdk::transaction::Transaction;
 
-
-use crate::lib::{Context, Wallet};
+use crate::lib::{read_wallet_file, Context, Wallet};
 
 //use crate::idl::{Idl, IdlEnumType, IdlInstruction, IdlKind, IdlType};
 use solana_program::pubkey::Pubkey;
@@ -297,10 +298,51 @@ impl ProgramExecutor {
         None
     }
 
+    pub fn get_account_and_signers_from_file_for_instruction(
+        &self,
+        instruction_name: &String,
+        path: String,
+    ) -> (Vec<Pubkey>, Vec<Keypair>) {
+        let json: Value = serde_json::from_str(&fs::read_to_string(path).unwrap()).unwrap();
+        let instruction = self.get_instruction_by_name(instruction_name).unwrap();
+        let addresses = json["addresses"].clone();
+        if addresses == Value::Null {
+            panic!("Missing account addresses");
+        }
+        let signers = json["signers"].clone();
+        if signers == Value::Null {
+            panic!("Missing signers");
+        }
+        let mut pubkeys: Vec<Pubkey> = Vec::new();
+        let mut keypairs: Vec<Keypair> = Vec::new();
+        for account in instruction.accounts.iter() {
+            if let IdlAccountItem::IdlAccount(account) = account {
+                let name = &account.name;
+                let address = addresses[name].clone();
+                if let Value::String(address) = address {
+                    pubkeys.push(Pubkey::from_str(&address).unwrap());
+                } else {
+                    panic!("Account address must be a String");
+                }
+                if account.is_signer {
+                    let signer = signers[name].clone();
+                    if let Value::String(keypair_file) = signer {
+                        let wallet = read_wallet_file(&keypair_file).unwrap();
+                        keypairs.push(wallet.key_pair);
+                    } else {
+                        panic!("Signer keypair file must be a String");
+                    }
+                }
+            }
+        }
+        (pubkeys, keypairs)
+    }
+
     pub fn run_instruction(
         &self,
         prog_id: Pubkey,
-        payer: Wallet,
+        payer: &Wallet,
+        signers: &Vec<&Keypair>,
         instruction_name: &str,
         account_pubkeys: &Vec<Pubkey>,
         args: Vec<String>,
@@ -317,13 +359,15 @@ impl ProgramExecutor {
         let tx = Transaction::new_signed_with_payer(
             &[instruction],
             Some(&payer.key_pair.pubkey()),
-            &[&payer.key_pair],
+            signers,
             blockhash,
         );
         //println!("\nTX {:?}", tx);
+        println!("Patata frita rusa");
         self.context
             .rpc_client
             .send_and_confirm_transaction_with_spinner(&tx)?;
+        println!("Patata frita croata");
 
         Ok(())
     }
