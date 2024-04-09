@@ -363,11 +363,9 @@ impl ProgramExecutor {
             blockhash,
         );
         //println!("\nTX {:?}", tx);
-        println!("Patata frita rusa");
         self.context
             .rpc_client
             .send_and_confirm_transaction_with_spinner(&tx)?;
-        println!("Patata frita croata");
 
         Ok(())
     }
