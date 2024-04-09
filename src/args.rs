@@ -121,7 +121,10 @@ pub struct CallCommand {
 
     /// Accounts file
     #[arg(short = 'f', long)]
-    #[clap(required_unless_present = "accounts")]
+    #[clap(
+        required_unless_present = "accounts",
+        required_unless_present = "signers"
+    )]
     pub accounts_file: Option<String>,
 
     /// Arguments separated by comma
