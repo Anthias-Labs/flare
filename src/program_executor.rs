@@ -310,11 +310,9 @@ impl ProgramExecutor {
             panic!("Missing account addresses");
         }
         let signers = json["signers"].clone();
-        if signers == Value::Null {
-            panic!("Missing signers");
-        }
         let mut pubkeys: Vec<Pubkey> = Vec::new();
         let mut keypairs: Vec<Keypair> = Vec::new();
+        let mut signers_flag = false;
         for account in instruction.accounts.iter() {
             if let IdlAccountItem::IdlAccount(account) = account {
                 let name = &account.name;
@@ -325,6 +323,12 @@ impl ProgramExecutor {
                     panic!("Account address must be a String");
                 }
                 if account.is_signer {
+                    if !signers_flag {
+                        if signers == Value::Null {
+                            panic!("Missing signers");
+                        }
+                        signers_flag = true;
+                    }
                     let signer = signers[name].clone();
                     if let Value::String(keypair_file) = signer {
                         let wallet = read_wallet_file(&keypair_file).unwrap();
