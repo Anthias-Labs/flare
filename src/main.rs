@@ -1,6 +1,6 @@
 mod lib;
 use lib::{
-    new_wallet, read_wallet_file, sign_message, wallet_from_seed_phrase, write_wallet_file, generate_pda_address,
+    new_wallet, read_wallet_file, sign_message, wallet_from_seed_phrase, write_wallet_file, generate_pda_address, try_get_default_rpc,
     Context, Wallet,
 };
 
@@ -61,9 +61,25 @@ fn get_wallet(mnemonic: &Option<String>, path: &Option<String>) -> Result<Wallet
     };
 }
 
+fn get_cluster(cluster_arg: &Option<String>) -> String {
+    let config = try_get_default_rpc();
+    match (cluster_arg, config) {
+        (Some(cluster), _) => {
+            return cluster.to_lowercase();
+        }
+        (None, Ok(cluster)) => {
+            return cluster.to_lowercase()
+        }
+        (_, _) => {
+            return "mainnet".to_string();
+        }
+    }
+}
+
 fn main() -> Result<()> {
+    
     let args = FlareCli::parse();
-    let cluster = args.cluster.to_lowercase();
+    let cluster = get_cluster(&args.cluster);
     let finalized = args.finalized;
 
     let ctx = Context::from_cluster(&cluster, finalized);

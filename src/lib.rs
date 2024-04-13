@@ -1,10 +1,11 @@
 use core::fmt;
-use std::str::FromStr;
+use std::{fs, str::FromStr};
 use std::result::Result::Ok;
 
 use anyhow::{Error, Result};
 use bip39::Mnemonic;
 use borsh::BorshDeserialize;
+use clap::builder::Str;
 use rand::RngCore;
 use solana_clap_utils::keypair;
 use solana_client::rpc_client::RpcClient;
@@ -20,6 +21,9 @@ use anchor_syn::idl::types::Idl;
 use flate2::read::ZlibDecoder;
 use serde_json::{json, Map, Value as JsonValue};
 use std::io::Read;
+
+use std::collections::HashMap;
+use serde_yml;
 
 const URL: &str = "https://api.mainnet-beta.solana.com";
 
@@ -151,6 +155,16 @@ impl Context {
         let data = account.data.to_vec();
         Ok(data)
     }
+}
+
+pub fn try_get_default_rpc() -> Result<String> {
+    let home = std::env::home_dir().unwrap();
+    let config_path = home.join(".config/solana/install/config.yml");
+    let config_raw = fs::read_to_string(config_path)?;
+    let config: HashMap<String, serde_yml::Value> = serde_yml::from_str(&config_raw)?;
+    let rpc = &config["json_rpc_url"];
+    let rpc_string = rpc.as_str().unwrap();
+    Ok(rpc_string.to_string())
 }
 
 pub fn generate_entropy() -> [u8; 16] {

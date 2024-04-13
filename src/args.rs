@@ -7,8 +7,8 @@ pub struct FlareCli {
     pub command: FlareCommand,
 
     /// Sets cluster (can be devnet, mainnet, testnet or a specific url)
-    #[arg(short, long, default_value_t = String::from("mainnet"))]
-    pub cluster: String,
+    #[arg(short, long)]
+    pub cluster: Option<String>,
 
     /// Wait for transaction to be finalized (default: confirmed)
     #[arg(short, long, default_value_t = false)]
