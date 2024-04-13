@@ -65,10 +65,20 @@ impl<'a> ProgramExecutor<'a> {
         }
     }
 
-    fn get_metadata() -> Map<String, Value> {
-        let mut metadata = Map::new();
-        metadata.insert("origin".to_string(), Value::String("anchor".to_string()));
-        metadata
+    fn get_idl_with_origin(mut idl: Idl) -> Idl {
+        let metadata = idl.metadata;
+        match metadata {
+            Some(mut value) => {
+                value["origin"] = Value::String(String::from("anchor"));
+                idl.metadata = Some(value);
+            }
+            None => {
+                let mut metadata = Map::new();
+                metadata.insert("origin".to_string(), Value::String("anchor".to_string()));
+                idl.metadata = Some(Value::Object(metadata))
+            }
+        }
+        idl
     }
 
     fn get_idl_string(&self) -> String {
@@ -98,7 +108,7 @@ impl<'a> ProgramExecutor<'a> {
             Ok(idl_obj) => idl = idl_obj,
             Err(e) => return Err(e),
         }
-        idl.metadata = Some(Value::Object(ProgramExecutor::get_metadata()));
+        idl = ProgramExecutor::get_idl_with_origin(idl);
         Ok(ProgramExecutor { idl, context })
     }
 
@@ -111,7 +121,7 @@ impl<'a> ProgramExecutor<'a> {
             Ok(idl_obj) => idl = idl_obj,
             Err(e) => return Err(e),
         }
-        idl.metadata = Some(Value::Object(ProgramExecutor::get_metadata()));
+        idl = ProgramExecutor::get_idl_with_origin(idl);
         Ok(ProgramExecutor { idl, context })
     }
 }
