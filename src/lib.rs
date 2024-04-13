@@ -10,7 +10,9 @@ use solana_client::rpc_client::RpcClient;
 use solana_program::{native_token::LAMPORTS_PER_SOL, pubkey::Pubkey};
 use solana_sdk::{
     account,
-    signature::{keypair_from_seed_phrase_and_passphrase, Keypair, read_keypair_file, write_keypair_file},
+    signature::{
+        keypair_from_seed_phrase_and_passphrase, read_keypair_file, write_keypair_file, Keypair,
+    },
     signer::Signer,
     system_transaction,
 };
@@ -98,7 +100,9 @@ impl Context {
             self.rpc_client.get_latest_blockhash()?,
         );
 
-        let sig = self.rpc_client.send_and_confirm_transaction_with_spinner(&tx)?;
+        let sig = self
+            .rpc_client
+            .send_and_confirm_transaction_with_spinner(&tx)?;
         Ok(())
     }
 
@@ -177,23 +181,22 @@ pub fn read_wallet_file(path: &str) -> Result<Wallet> {
     let kp = read_keypair_file(path);
     let kp = match kp {
         Ok(keypair) => keypair,
-        Err(_) => return Err(Error::msg("Error reading keypair file"))
+        Err(_) => return Err(Error::msg("Error reading keypair file")),
     };
 
     return Ok(Wallet {
         key_pair: kp,
         mnemonic: "".to_string(),
-    })
+    });
 }
 
 pub fn write_wallet_file(wallet: &Wallet, path: &str) -> Result<()> {
     let kp = &wallet.key_pair;
     let r = write_keypair_file(kp, path);
-    match(r) {
+    match (r) {
         Ok(_) => return Ok(()),
-        Err(_) => return Err(Error::msg("Error writing keypair file"))
+        Err(_) => return Err(Error::msg("Error writing keypair file")),
     }
-
 }
 
 pub fn sign_message(signer: &Wallet, message: &str) -> String {

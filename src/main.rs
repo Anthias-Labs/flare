@@ -1,5 +1,5 @@
-mod lib;
-use lib::{
+use flare;
+use flare::{
     new_wallet, read_wallet_file, sign_message, wallet_from_seed_phrase, write_wallet_file,
     Context, Wallet,
 };
@@ -10,35 +10,14 @@ mod program_executor;
 mod args;
 use args::{FlareCli, FlareCommand};
 
-// use borsh::io;
-//use borsh::*;
-use borsh::{BorshDeserialize, BorshSerialize};
 use program_executor::ProgramExecutor;
-use serde_json::Value;
-use solana_sdk::address_lookup_table::instruction;
-use solana_sdk::instruction::AccountMeta;
-use std::collections::HashMap;
-use std::fs::{self, File};
-use std::io::{self, Write};
+use std::fs::File;
+use std::io::Write;
 
-use anchor_client;
-use anchor_client::{Client, ClientError, Config, Program};
-use anchor_lang::{accounts, AnchorDeserialize, AnchorSerialize};
 use anyhow::{Error, Result};
-use bip39::Mnemonic;
 use clap::Parser;
-use rand::RngCore;
-use solana_clap_utils::input_validators::is_pubkey;
-use solana_client::rpc_client::RpcClient;
-use solana_program::{native_token::LAMPORTS_PER_SOL, pubkey::Pubkey};
-use solana_sdk::{
-    client,
-    instruction::Instruction,
-    signature::{keypair_from_seed_phrase_and_passphrase, Keypair},
-    signer::Signer,
-    system_transaction,
-    transaction::Transaction,
-};
+use solana_program::pubkey::Pubkey;
+use solana_sdk::{signature::Keypair, signer::Signer};
 use std::str::FromStr;
 const URL: &str = "https://api.mainnet-beta.solana.com";
 
@@ -96,14 +75,19 @@ fn main() -> Result<()> {
         FlareCommand::BlockHeight => println!("Block height: {}", ctx.get_block_height()?),
         FlareCommand::Epoch => println!("Epoch number: {}", ctx.get_epoch_number()?),
         FlareCommand::Call(call_data) => {
-            let prog_id = Pubkey::from_str(&call_data.program)?;
             let payer = get_wallet(&call_data.mnemonic, &call_data.keypair)?;
             let instruction_name = call_data.instruction_name;
             let args = call_data.args; // Esta lectura hay que cambiarla para no pasar signer dos veces
             let mut account_pubkeys: Vec<Pubkey> = Vec::new();
             let mut signers_keypairs: Vec<Keypair> = Vec::new();
-            let idl_path = call_data.idl;
-            let program_executor = ProgramExecutor::from_file_with_context(ctx, &idl_path);
+            let idl_path = call_data.idl_file;
+            let program_executor_res =
+                ProgramExecutor::new_with_context(&ctx, &call_data.program, idl_path);
+            let program_executor: ProgramExecutor;
+            match program_executor_res {
+                Ok(executor) => program_executor = executor,
+                Err(_) => panic!("Error fetching IDL from cluster or file"),
+            }
             if let Some(accounts) = call_data.accounts {
                 for pubkey_str in accounts {
                     account_pubkeys.push(Pubkey::from_str(&pubkey_str)?)
@@ -128,20 +112,29 @@ fn main() -> Result<()> {
             signers_keypairs
                 .iter()
                 .for_each(|keypair| signers_refs.push(keypair));
-            program_executor.run_instruction(
-                prog_id,
+            match program_executor.run_instruction(
+                Pubkey::from_str(&call_data.program).unwrap(), // ver si podemos conseguir el address en la metadata del idl
                 &payer,
                 &signers_refs,
                 &instruction_name,
                 &account_pubkeys,
                 args,
-            );
+            ) {
+                Ok(_) => println!("Instruction executed succesfully"),
+                Err(e) => return Err(e),
+            }
         }
         FlareCommand::ReadAccount(read_account_data) => {
             let prog_id = Pubkey::from_str(&read_account_data.program)?;
             let account_pubkey = Pubkey::from_str(&read_account_data.account)?;
-            let idl_path = read_account_data.idl;
-            let program_executor = ProgramExecutor::from_file_with_context(ctx, &idl_path);
+            let idl_path = read_account_data.idl_file;
+            let program_executor_res =
+                ProgramExecutor::new_with_context(&ctx, &read_account_data.program, idl_path);
+            let program_executor: ProgramExecutor;
+            match program_executor_res {
+                Ok(executor) => program_executor = executor,
+                Err(_) => panic!("Error fetching IDL from cluster or file"),
+            }
             println!(
                 "{}",
                 program_executor.fetch_account(&prog_id, &account_pubkey)?

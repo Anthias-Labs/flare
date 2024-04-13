@@ -133,7 +133,8 @@ pub struct CallCommand {
 
     /// Idl file path
     #[arg(short, long)]
-    pub idl: String,
+    #[clap(required = false)]
+    pub idl_file: Option<String>,
 }
 
 #[derive(Debug, Args)]
@@ -148,7 +149,8 @@ pub struct ReadAccountCommand {
 
     /// Idl file path
     #[arg(short, long)]
-    pub idl: String,
+    #[clap(required = false)]
+    pub idl_file: Option<String>,
 }
 
 #[derive(Debug, Args)]
