@@ -84,8 +84,14 @@ echo -e "$RED ./flare --cluster devnet read-account --program WixFUMVqBSTygzeFy9
 
 echo
 echo "-------------------------------------"
+echo -e "$BLUE Generating PDA... $NC"
+echo -e "$RED ./flare generate-pda --program WixFUMVqBSTygzeFy9Wuy5XxkeH8xHnUEGvfyyJYqve $(echo $address),foo,bar $NC"
+./flare generate-pda --program WixFUMVqBSTygzeFy9Wuy5XxkeH8xHnUEGvfyyJYqve $(echo $address),foo,bar
+
+echo
+echo "-------------------------------------"
 echo -e "$BLUE Fetching published IDL... $NC"
-echo -e "$RED ./flare fetch-idl --program cndy3Z4yapfJBmL3ShUp5exZKqR3z33thTzeNMm2gRZ $NC"
-./flare fetch-idl --program cndy3Z4yapfJBmL3ShUp5exZKqR3z33thTzeNMm2gRZ
+echo -e "$RED ./flare --cluster devnet fetch-idl --program 39EmHuEbqkzUvPncNchXW1Yt6VPmps2Z9ucR82EozNAa $NC"
+./flare --cluster devnet fetch-idl --program 39EmHuEbqkzUvPncNchXW1Yt6VPmps2Z9ucR82EozNAa
 
 
