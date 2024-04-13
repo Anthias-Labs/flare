@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::fs;
+use std::str::FromStr;
 
 use anchor_syn::idl::types::{
     Idl, IdlAccountItem, IdlInstruction, IdlType, IdlTypeDefinition, IdlTypeDefinitionTy,
@@ -9,11 +10,11 @@ use borsh::{BorshDeserialize, BorshSerialize};
 use convert_case::{Case, Casing};
 use serde_json::{Map, Value};
 use solana_sdk::instruction::{AccountMeta, Instruction};
+use solana_sdk::signature::Keypair;
 use solana_sdk::signer::Signer;
 use solana_sdk::transaction::Transaction;
 
-
-use crate::lib::{Context, Wallet};
+use crate::lib::{read_wallet_file, Context, Wallet};
 
 //use crate::idl::{Idl, IdlEnumType, IdlInstruction, IdlKind, IdlType};
 use solana_program::pubkey::Pubkey;
@@ -67,13 +68,13 @@ impl ProgramExecutor {
         serde_json::to_string(&self.idl).unwrap()
     }
 
-    pub fn from_file(cluster: &str, path: &str) -> Self {
-        ProgramExecutor::from_file_with_context(Context::from_cluster(cluster), path)
+    pub fn from_file(cluster: &str, finalized: bool, path: &str) -> Self {
+        ProgramExecutor::from_file_with_context(Context::from_cluster(cluster, finalized), path)
     }
 
-    pub fn from_program_address(cluster: &str, program_address: &str) -> Self {
+    pub fn from_program_address(cluster: &str, finalized: bool, program_address: &str) -> Result<Self> {
         ProgramExecutor::from_program_address_with_context(
-            Context::from_cluster(cluster),
+            Context::from_cluster(cluster, finalized),
             program_address,
         )
     }
@@ -84,10 +85,10 @@ impl ProgramExecutor {
         ProgramExecutor { idl, context }
     }
 
-    pub fn from_program_address_with_context(context: Context, program_address: &str) -> Self {
-        let mut idl = context.get_idl(program_address).unwrap();
+    pub fn from_program_address_with_context(context: Context, program_address: &str) -> Result<Self> {
+        let mut idl = context.get_idl(program_address)?;
         idl.metadata = Some(Value::Object(ProgramExecutor::get_metadata()));
-        ProgramExecutor { idl, context }
+        Ok(ProgramExecutor { idl, context })
     }
 }
 
@@ -297,10 +298,55 @@ impl ProgramExecutor {
         None
     }
 
+    pub fn get_account_and_signers_from_file_for_instruction(
+        &self,
+        instruction_name: &String,
+        path: String,
+    ) -> (Vec<Pubkey>, Vec<Keypair>) {
+        let json: Value = serde_json::from_str(&fs::read_to_string(path).unwrap()).unwrap();
+        let instruction = self.get_instruction_by_name(instruction_name).unwrap();
+        let addresses = json["addresses"].clone();
+        if addresses == Value::Null {
+            panic!("Missing account addresses");
+        }
+        let signers = json["signers"].clone();
+        let mut pubkeys: Vec<Pubkey> = Vec::new();
+        let mut keypairs: Vec<Keypair> = Vec::new();
+        let mut signers_flag = false;
+        for account in instruction.accounts.iter() {
+            if let IdlAccountItem::IdlAccount(account) = account {
+                let name = &account.name;
+                let address = addresses[name].clone();
+                if let Value::String(address) = address {
+                    pubkeys.push(Pubkey::from_str(&address).unwrap());
+                } else {
+                    panic!("Account address must be a String");
+                }
+                if account.is_signer {
+                    if !signers_flag {
+                        if signers == Value::Null {
+                            panic!("Missing signers");
+                        }
+                        signers_flag = true;
+                    }
+                    let signer = signers[name].clone();
+                    if let Value::String(keypair_file) = signer {
+                        let wallet = read_wallet_file(&keypair_file).unwrap();
+                        keypairs.push(wallet.key_pair);
+                    } else {
+                        panic!("Signer keypair file must be a String");
+                    }
+                }
+            }
+        }
+        (pubkeys, keypairs)
+    }
+
     pub fn run_instruction(
         &self,
         prog_id: Pubkey,
-        payer: Wallet,
+        payer: &Wallet,
+        signers: &Vec<&Keypair>,
         instruction_name: &str,
         account_pubkeys: &Vec<Pubkey>,
         args: Vec<String>,
@@ -317,7 +363,7 @@ impl ProgramExecutor {
         let tx = Transaction::new_signed_with_payer(
             &[instruction],
             Some(&payer.key_pair.pubkey()),
-            &[&payer.key_pair],
+            signers,
             blockhash,
         );
         //println!("\nTX {:?}", tx);

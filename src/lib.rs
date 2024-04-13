@@ -1,18 +1,17 @@
 use core::fmt;
-use std::str::FromStr;
+use std::{fs, str::FromStr};
+use std::result::Result::Ok;
 
 use anyhow::{Error, Result};
 use bip39::Mnemonic;
 use borsh::BorshDeserialize;
+use clap::builder::Str;
 use rand::RngCore;
 use solana_clap_utils::keypair;
 use solana_client::rpc_client::RpcClient;
-use solana_program::{native_token::LAMPORTS_PER_SOL, pubkey::Pubkey};
+use solana_program::{native_token::LAMPORTS_PER_SOL, pubkey::{self, Pubkey}};
 use solana_sdk::{
-    account,
-    signature::{keypair_from_seed_phrase_and_passphrase, Keypair, read_keypair_file, write_keypair_file},
-    signer::Signer,
-    system_transaction,
+    account, commitment_config::CommitmentConfig, signature::{keypair_from_seed_phrase_and_passphrase, read_keypair_file, write_keypair_file, Keypair}, signer::Signer, system_transaction
 };
 
 use anchor_client::{Client, ClientError, Program};
@@ -22,6 +21,9 @@ use anchor_syn::idl::types::Idl;
 use flate2::read::ZlibDecoder;
 use serde_json::{json, Map, Value as JsonValue};
 use std::io::Read;
+
+use std::collections::HashMap;
+use serde_yml;
 
 const URL: &str = "https://api.mainnet-beta.solana.com";
 
@@ -50,12 +52,19 @@ impl fmt::Display for Wallet {
 }
 
 impl Context {
-    pub fn new(url: &str) -> Self {
-        let rpc_client = RpcClient::new(url);
+    pub fn new(url: &str, finalized: bool) -> Self {
+        let comm_scheme: CommitmentConfig;
+        if (finalized) {
+            comm_scheme = CommitmentConfig::finalized();
+        } else {
+            comm_scheme = CommitmentConfig::confirmed();
+        }
+        let rpc_client = RpcClient::new_with_commitment(url, comm_scheme);
+        
         Self { rpc_client }
     }
 
-    pub fn from_cluster(cluster: &str) -> Context {
+    pub fn from_cluster(cluster: &str, finalized: bool) -> Context {
         let cluster_url;
         match cluster {
             "devnet" => cluster_url = URL_DEVNET,
@@ -63,7 +72,7 @@ impl Context {
             "testnet" => cluster_url = URL_TESTNET,
             &_ => cluster_url = cluster,
         }
-        Context::new(cluster_url)
+        Context::new(cluster_url, finalized)
     }
 
     pub fn get_balance(&self, pubkey: &Pubkey) -> Result<u64> {
@@ -148,6 +157,16 @@ impl Context {
     }
 }
 
+pub fn try_get_default_rpc() -> Result<String> {
+    let home = std::env::home_dir().unwrap();
+    let config_path = home.join(".config/solana/install/config.yml");
+    let config_raw = fs::read_to_string(config_path)?;
+    let config: HashMap<String, serde_yml::Value> = serde_yml::from_str(&config_raw)?;
+    let rpc = &config["json_rpc_url"];
+    let rpc_string = rpc.as_str().unwrap();
+    Ok(rpc_string.to_string())
+}
+
 pub fn generate_entropy() -> [u8; 16] {
     let mut rng = rand::thread_rng();
     let mut entropy = [0u8; 16];
@@ -199,4 +218,29 @@ pub fn write_wallet_file(wallet: &Wallet, path: &str) -> Result<()> {
 pub fn sign_message(signer: &Wallet, message: &str) -> String {
     let sig = signer.key_pair.sign_message(message.as_bytes());
     return sig.to_string();
+}
+
+
+pub fn generate_pda_address(seeds: Vec<String>, program_id: &Pubkey) -> (Pubkey, u8) {
+    let mut seeds_u8: Vec<Vec<u8>> = Vec::new();
+
+    for seed in seeds {
+        let pubkey_result = Pubkey::from_str(&seed);
+        if let Ok(pubkey) = pubkey_result {
+            seeds_u8.push(pubkey.to_bytes().to_vec());
+            continue;
+        }
+
+        let num_parse_result = seed.parse::<i64>();
+        if let Ok(num) = num_parse_result {
+            seeds_u8.push(num.to_ne_bytes().to_vec());
+            continue;
+        }
+
+        seeds_u8.push(seed.as_bytes().to_vec())
+    }
+
+    let seeds_u8_refs: Vec<&[u8]> = seeds_u8.iter().map(AsRef::as_ref).collect();
+
+    Pubkey::find_program_address(&seeds_u8_refs, program_id)
 }

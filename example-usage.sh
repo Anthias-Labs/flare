@@ -73,8 +73,8 @@ echo -e "$RED ./flare --cluster devnet send --keypair $(echo $keypair) --to 67pU
 echo
 echo "-------------------------------------"
 echo -e "$BLUE Calling a method from a program... $NC"
-echo -e "$RED ./flare --cluster devnet call --keypair $(echo $keypair) --program WixFUMVqBSTygzeFy9Wuy5XxkeH8xHnUEGvfyyJYqve --accounts 78vJRdkATNZm7cJHaLscYu1HZq24EH3FV6Eppx3BS9qA,$(echo $address) --idl ./example/onchain_voting.json  gibVote GM $NC"
-./flare call --keypair $(echo $keypair) --program WixFUMVqBSTygzeFy9Wuy5XxkeH8xHnUEGvfyyJYqve --accounts 78vJRdkATNZm7cJHaLscYu1HZq24EH3FV6Eppx3BS9qA,$(echo $address) --idl ./example/onchain_voting.json  gibVote GM
+echo -e "$RED ./flare --cluster devnet call --keypair $(echo $keypair) --program WixFUMVqBSTygzeFy9Wuy5XxkeH8xHnUEGvfyyJYqve --accounts 78vJRdkATNZm7cJHaLscYu1HZq24EH3FV6Eppx3BS9qA,$(echo $address) --signers $(echo $keypair) --idl ./example/onchain_voting.json  gibVote GM $NC"
+./flare call --keypair $(echo $keypair) --program WixFUMVqBSTygzeFy9Wuy5XxkeH8xHnUEGvfyyJYqve --accounts 78vJRdkATNZm7cJHaLscYu1HZq24EH3FV6Eppx3BS9qA,$(echo $address) --signers $(echo $keypair) --idl ./example/onchain_voting.json  gibVote GM
 
 echo
 echo "-------------------------------------"
@@ -84,8 +84,14 @@ echo -e "$RED ./flare --cluster devnet read-account --program WixFUMVqBSTygzeFy9
 
 echo
 echo "-------------------------------------"
+echo -e "$BLUE Generating PDA... $NC"
+echo -e "$RED ./flare generate-pda --program WixFUMVqBSTygzeFy9Wuy5XxkeH8xHnUEGvfyyJYqve $(echo $address),foo,bar $NC"
+./flare generate-pda --program WixFUMVqBSTygzeFy9Wuy5XxkeH8xHnUEGvfyyJYqve $(echo $address),foo,bar
+
+echo
+echo "-------------------------------------"
 echo -e "$BLUE Fetching published IDL... $NC"
-echo -e "$RED ./flare fetch-idl --program cndy3Z4yapfJBmL3ShUp5exZKqR3z33thTzeNMm2gRZ $NC"
-./flare fetch-idl --program cndy3Z4yapfJBmL3ShUp5exZKqR3z33thTzeNMm2gRZ
+echo -e "$RED ./flare --cluster devnet fetch-idl --program 39EmHuEbqkzUvPncNchXW1Yt6VPmps2Z9ucR82EozNAa $NC"
+./flare --cluster devnet fetch-idl --program 39EmHuEbqkzUvPncNchXW1Yt6VPmps2Z9ucR82EozNAa
 
 
