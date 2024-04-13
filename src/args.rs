@@ -7,8 +7,12 @@ pub struct FlareCli {
     pub command: FlareCommand,
 
     /// Sets cluster (can be devnet, mainnet, testnet or a specific url)
-    #[arg(short, long, default_value_t = String::from("mainnet"))]
-    pub cluster: String,
+    #[arg(short, long)]
+    pub cluster: Option<String>,
+
+    /// Wait for transaction to be finalized (default: confirmed)
+    #[arg(short, long, default_value_t = false)]
+    pub finalized: bool,
 }
 
 #[derive(Debug, Subcommand)]
@@ -45,6 +49,9 @@ pub enum FlareCommand {
 
     /// Fetch IDL from program
     FetchIDL(FetchIDLCommand),
+
+    /// Generate PDA from seeds and program address
+    GeneratePDA(GeneratePDACommand),
 }
 
 #[derive(Debug, Args)]
@@ -106,9 +113,6 @@ pub struct CallCommand {
     #[arg(short, long)]
     pub mnemonic: Option<String>,
 
-    /// Instruction name
-    pub instruction_name: String,
-
     /// Account pubkeys separated by comma
     #[arg(short, long)]
     #[clap(required_unless_present = "accounts_file", value_delimiter = ',', num_args = 1..)]
@@ -116,7 +120,7 @@ pub struct CallCommand {
 
     /// Signers
     #[arg(short, long)]
-    #[clap(required_unless_present = "accounts_file", value_delimiter = ',', num_args = 1..)]
+    #[clap(value_delimiter = ',', num_args = 1..)]
     pub signers: Option<Vec<String>>,
 
     /// Accounts file
@@ -126,6 +130,13 @@ pub struct CallCommand {
         required_unless_present = "signers"
     )]
     pub accounts_file: Option<String>,
+
+    /// Idl file path
+    #[arg(short, long)]
+    pub idl: Option<String>,
+
+    /// Instruction name
+    pub instruction_name: String,
 
     /// Arguments separated by comma
     #[clap(value_delimiter = ',', num_args = 0..)]
@@ -165,4 +176,15 @@ pub struct AddressDeriveCommand {
     /// Keypair file
     #[arg(short, long)]
     pub keypair: String,
+}
+
+#[derive(Debug, Args)]
+pub struct GeneratePDACommand {
+    /// Program address
+    #[arg(short, long)]
+    pub program: String,
+
+    /// Seeds separated by comma
+    #[clap(value_delimiter = ',', num_args = 0..)]
+    pub seeds: Vec<String>,
 }

@@ -1,0 +1,11 @@
+{
+  "addresses": {
+    "voteAccount": "5JURcwYsi86ijfBPmBThKdoHLjFFDjZdbAcP7iz4dcCC",
+    "signer": "CbteoRqP7iwDZvpKTci1hpeUVrajDjT61uXrGGGQApuL",
+    "systemProgram": "11111111111111111111111111111111"
+  },
+  "signers": {
+    "voteAccount": "5JURcwYsi86ijfBPmBThKdoHLjFFDjZdbAcP7iz4dcCC.json",
+    "signer": "CbteoRqP7iwDZvpKTci1hpeUVrajDjT61uXrGGGQApuL.json"
+  }
+}

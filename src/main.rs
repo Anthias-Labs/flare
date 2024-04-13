@@ -1,4 +1,4 @@
-use flare;
+use flare::{self, generate_pda_address, try_get_default_rpc};
 use flare::{
     new_wallet, read_wallet_file, sign_message, wallet_from_seed_phrase, write_wallet_file,
     Context, Wallet,
@@ -39,11 +39,26 @@ fn get_wallet(mnemonic: &Option<String>, path: &Option<String>) -> Result<Wallet
     };
 }
 
+fn get_cluster(cluster_arg: &Option<String>) -> String {
+    let config = try_get_default_rpc();
+    match (cluster_arg, config) {
+        (Some(cluster), _) => {
+            return cluster.to_lowercase();
+        }
+        (None, Ok(cluster)) => return cluster.to_lowercase(),
+        (_, _) => {
+            return "mainnet".to_string();
+        }
+    }
+}
+
 fn main() -> Result<()> {
     let args = FlareCli::parse();
-    let cluster = args.cluster.to_lowercase();
+    let cluster = get_cluster(&args.cluster);
+    let finalized = args.finalized;
 
-    let ctx = Context::from_cluster(&cluster); // Cambiar por Context::from_cluster(&cluster)
+    let ctx = Context::from_cluster(&cluster, finalized);
+
     match args.command {
         FlareCommand::Balance(balance_data) => {
             let pubkey = Pubkey::from_str(&balance_data.pubkey)?;
@@ -93,9 +108,11 @@ fn main() -> Result<()> {
                     account_pubkeys.push(Pubkey::from_str(&pubkey_str)?)
                 }
                 if let Some(signers) = call_data.signers {
-                    // logic to read signers from CLI
+                    for signer_file in signers {
+                        signers_keypairs.push(read_wallet_file(&signer_file)?.key_pair);
+                    }
                 } else {
-                    panic!("Missing signers");
+                    signers_keypairs = vec![payer.key_pair.insecure_clone()];
                 }
             } else if let Some(accounts_file) = call_data.accounts_file {
                 let pubkeys_and_keypairs = program_executor
@@ -152,6 +169,13 @@ fn main() -> Result<()> {
         FlareCommand::AddressDerive(address_derive_data) => {
             let wallet = read_wallet_file(&address_derive_data.keypair)?;
             println!("{}", wallet.key_pair.pubkey());
+        }
+        FlareCommand::GeneratePDA(generate_pda_data) => {
+            let program = generate_pda_data.program;
+            let seeds = generate_pda_data.seeds;
+
+            let (pubkey, bump) = generate_pda_address(seeds, &Pubkey::from_str(&program)?);
+            println!("{}\nBump: {}", pubkey, bump);
         }
     }
 

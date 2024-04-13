@@ -44,6 +44,8 @@ To test the tool and see example usage:
 
 `flare address-derive`: derives address from a keypair file
 
+`flare generate-pda`: generates Program Derived Address from program address and seeds
+
 ## Roadmap
 - [X] Reading wallet SOL balance from chain
 - [X] Reading epoch/block height
@@ -54,9 +56,9 @@ To test the tool and see example usage:
 - [X] Calling methods and reading state from on-chain programs
 - [X] Adding utils for common operations
 - [X] File-based  wallet and config management (storage and read)
+- [X] Add support for multiple signers on an instruction
+- [X] Add support for Program Derived Addresses
 - [ ] Improve documentation and error messages
-- [ ] Add support for multiple signers on an instruction
-- [ ] Add support for Program Derived Addresses
 
 ## About
 Flare is the first tool from Solstice, the toolkit for developers on Solana. The development of Flare was originally funded by a grant from the Solana Foundation to Anthias Labs in January of 2024. Flare’s public launch is scheduled for April of 2024.
