@@ -54,7 +54,7 @@ pub struct ProgramExecutor<'a> {
 impl<'a> ProgramExecutor<'a> {
     fn get_idl_from_file(path: &str) -> Result<Idl> {
         let file = fs::read_to_string(path);
-        let mut json_idl: String;
+        let json_idl: String;
         match file {
             Ok(json_string) => json_idl = json_string,
             Err(e) => return Err(Error::new(e)),

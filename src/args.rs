@@ -131,10 +131,6 @@ pub struct CallCommand {
     )]
     pub accounts_file: Option<String>,
 
-    /// Idl file path
-    #[arg(short, long)]
-    pub idl: Option<String>,
-
     /// Instruction name
     pub instruction_name: String,
 
@@ -145,7 +141,7 @@ pub struct CallCommand {
     /// Idl file path
     #[arg(short, long)]
     #[clap(required = false)]
-    pub idl_file: Option<String>,
+    pub idl: Option<String>,
 }
 
 #[derive(Debug, Args)]
@@ -161,7 +157,7 @@ pub struct ReadAccountCommand {
     /// Idl file path
     #[arg(short, long)]
     #[clap(required = false)]
-    pub idl_file: Option<String>,
+    pub idl: Option<String>,
 }
 
 #[derive(Debug, Args)]

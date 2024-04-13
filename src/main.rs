@@ -19,10 +19,6 @@ use clap::Parser;
 use solana_program::pubkey::Pubkey;
 use solana_sdk::{signature::Keypair, signer::Signer};
 use std::str::FromStr;
-const URL: &str = "https://api.mainnet-beta.solana.com";
-
-const URL_DEVNET: &str = "https://api.devnet.solana.com";
-const URL_TESTNET: &str = "https://api.testnet.solana.com";
 
 fn get_wallet(mnemonic: &Option<String>, path: &Option<String>) -> Result<Wallet> {
     let wallet = match (mnemonic, path) {
@@ -95,7 +91,7 @@ fn main() -> Result<()> {
             let args = call_data.args; // Esta lectura hay que cambiarla para no pasar signer dos veces
             let mut account_pubkeys: Vec<Pubkey> = Vec::new();
             let mut signers_keypairs: Vec<Keypair> = Vec::new();
-            let idl_path = call_data.idl_file;
+            let idl_path = call_data.idl;
             let program_executor_res =
                 ProgramExecutor::new_with_context(&ctx, &call_data.program, idl_path);
             let program_executor: ProgramExecutor;
@@ -144,7 +140,7 @@ fn main() -> Result<()> {
         FlareCommand::ReadAccount(read_account_data) => {
             let prog_id = Pubkey::from_str(&read_account_data.program)?;
             let account_pubkey = Pubkey::from_str(&read_account_data.account)?;
-            let idl_path = read_account_data.idl_file;
+            let idl_path = read_account_data.idl;
             let program_executor_res =
                 ProgramExecutor::new_with_context(&ctx, &read_account_data.program, idl_path);
             let program_executor: ProgramExecutor;
