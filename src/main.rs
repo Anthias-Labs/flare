@@ -17,6 +17,7 @@ use program_executor::ProgramExecutor;
 use serde_json::Value;
 use solana_sdk::address_lookup_table::instruction;
 use solana_sdk::instruction::AccountMeta;
+use solana_sdk::signature::read_keypair_file;
 use std::collections::HashMap;
 use std::fs::{self, File};
 use std::io::{self, Write};
@@ -63,8 +64,9 @@ fn get_wallet(mnemonic: &Option<String>, path: &Option<String>) -> Result<Wallet
 fn main() -> Result<()> {
     let args = FlareCli::parse();
     let cluster = args.cluster.to_lowercase();
+    let finalized = args.finalized;
 
-    let ctx = Context::from_cluster(&cluster); // Cambiar por Context::from_cluster(&cluster)
+    let ctx = Context::from_cluster(&cluster, finalized);
     match args.command {
         FlareCommand::Balance(balance_data) => {
             let pubkey = Pubkey::from_str(&balance_data.pubkey)?;
@@ -102,16 +104,24 @@ fn main() -> Result<()> {
             let args = call_data.args; // Esta lectura hay que cambiarla para no pasar signer dos veces
             let mut account_pubkeys: Vec<Pubkey> = Vec::new();
             let mut signers_keypairs: Vec<Keypair> = Vec::new();
-            let idl_path = call_data.idl;
-            let program_executor = ProgramExecutor::from_file_with_context(ctx, &idl_path);
+            let idl_path_opt = call_data.idl;
+            let program_executor: ProgramExecutor;
+
+            if let Some(idl_path) = idl_path_opt {
+                program_executor = ProgramExecutor::from_file_with_context(ctx, &idl_path);
+            } else {
+                program_executor = ProgramExecutor::from_program_address_with_context(ctx, &prog_id.to_string())?
+            }
             if let Some(accounts) = call_data.accounts {
                 for pubkey_str in accounts {
                     account_pubkeys.push(Pubkey::from_str(&pubkey_str)?)
                 }
                 if let Some(signers) = call_data.signers {
-                    // logic to read signers from CLI
+                    for signer_file in signers {
+                        signers_keypairs.push(read_wallet_file(&signer_file)?.key_pair);
+                    }
                 } else {
-                    panic!("Missing signers");
+                    signers_keypairs = vec![payer.key_pair.insecure_clone()];
                 }
             } else if let Some(accounts_file) = call_data.accounts_file {
                 let pubkeys_and_keypairs = program_executor
@@ -140,8 +150,13 @@ fn main() -> Result<()> {
         FlareCommand::ReadAccount(read_account_data) => {
             let prog_id = Pubkey::from_str(&read_account_data.program)?;
             let account_pubkey = Pubkey::from_str(&read_account_data.account)?;
-            let idl_path = read_account_data.idl;
-            let program_executor = ProgramExecutor::from_file_with_context(ctx, &idl_path);
+            let idl_path_opt = read_account_data.idl;
+            let program_executor ;
+            if let Some(idl_path) = idl_path_opt {
+                program_executor = ProgramExecutor::from_file_with_context(ctx, &idl_path);
+            } else {
+                program_executor = ProgramExecutor::from_program_address_with_context(ctx, &prog_id.to_string())?
+            }
             println!(
                 "{}",
                 program_executor.fetch_account(&prog_id, &account_pubkey)?

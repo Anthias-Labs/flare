@@ -9,6 +9,11 @@ pub struct FlareCli {
     /// Sets cluster (can be devnet, mainnet, testnet or a specific url)
     #[arg(short, long, default_value_t = String::from("mainnet"))]
     pub cluster: String,
+
+    /// Wait for transaction to be finalized (default: confirmed)
+    #[arg(short, long, default_value_t = false)]
+    pub finalized: bool,
+
 }
 
 #[derive(Debug, Subcommand)]
@@ -106,9 +111,6 @@ pub struct CallCommand {
     #[arg(short, long)]
     pub mnemonic: Option<String>,
 
-    /// Instruction name
-    pub instruction_name: String,
-
     /// Account pubkeys separated by comma
     #[arg(short, long)]
     #[clap(required_unless_present = "accounts_file", value_delimiter = ',', num_args = 1..)]
@@ -116,7 +118,7 @@ pub struct CallCommand {
 
     /// Signers
     #[arg(short, long)]
-    #[clap(required_unless_present = "accounts_file", value_delimiter = ',', num_args = 1..)]
+    #[clap(value_delimiter = ',', num_args = 1..)]
     pub signers: Option<Vec<String>>,
 
     /// Accounts file
@@ -127,13 +129,17 @@ pub struct CallCommand {
     )]
     pub accounts_file: Option<String>,
 
+    /// Idl file path
+    #[arg(short, long)]
+    pub idl: Option<String>,
+
+    /// Instruction name
+    pub instruction_name: String,
+    
     /// Arguments separated by comma
     #[clap(value_delimiter = ',', num_args = 0..)]
     pub args: Vec<String>,
 
-    /// Idl file path
-    #[arg(short, long)]
-    pub idl: String,
 }
 
 #[derive(Debug, Args)]
@@ -148,7 +154,7 @@ pub struct ReadAccountCommand {
 
     /// Idl file path
     #[arg(short, long)]
-    pub idl: String,
+    pub idl: Option<String>,
 }
 
 #[derive(Debug, Args)]

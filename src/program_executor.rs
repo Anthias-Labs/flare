@@ -68,13 +68,13 @@ impl ProgramExecutor {
         serde_json::to_string(&self.idl).unwrap()
     }
 
-    pub fn from_file(cluster: &str, path: &str) -> Self {
-        ProgramExecutor::from_file_with_context(Context::from_cluster(cluster), path)
+    pub fn from_file(cluster: &str, finalized: bool, path: &str) -> Self {
+        ProgramExecutor::from_file_with_context(Context::from_cluster(cluster, finalized), path)
     }
 
-    pub fn from_program_address(cluster: &str, program_address: &str) -> Self {
+    pub fn from_program_address(cluster: &str, finalized: bool, program_address: &str) -> Result<Self> {
         ProgramExecutor::from_program_address_with_context(
-            Context::from_cluster(cluster),
+            Context::from_cluster(cluster, finalized),
             program_address,
         )
     }
@@ -85,10 +85,10 @@ impl ProgramExecutor {
         ProgramExecutor { idl, context }
     }
 
-    pub fn from_program_address_with_context(context: Context, program_address: &str) -> Self {
-        let mut idl = context.get_idl(program_address).unwrap();
+    pub fn from_program_address_with_context(context: Context, program_address: &str) -> Result<Self> {
+        let mut idl = context.get_idl(program_address)?;
         idl.metadata = Some(Value::Object(ProgramExecutor::get_metadata()));
-        ProgramExecutor { idl, context }
+        Ok(ProgramExecutor { idl, context })
     }
 }
 
@@ -310,11 +310,9 @@ impl ProgramExecutor {
             panic!("Missing account addresses");
         }
         let signers = json["signers"].clone();
-        if signers == Value::Null {
-            panic!("Missing signers");
-        }
         let mut pubkeys: Vec<Pubkey> = Vec::new();
         let mut keypairs: Vec<Keypair> = Vec::new();
+        let mut signers_flag = false;
         for account in instruction.accounts.iter() {
             if let IdlAccountItem::IdlAccount(account) = account {
                 let name = &account.name;
@@ -325,6 +323,12 @@ impl ProgramExecutor {
                     panic!("Account address must be a String");
                 }
                 if account.is_signer {
+                    if !signers_flag {
+                        if signers == Value::Null {
+                            panic!("Missing signers");
+                        }
+                        signers_flag = true;
+                    }
                     let signer = signers[name].clone();
                     if let Value::String(keypair_file) = signer {
                         let wallet = read_wallet_file(&keypair_file).unwrap();

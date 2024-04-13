@@ -9,10 +9,7 @@ use solana_clap_utils::keypair;
 use solana_client::rpc_client::RpcClient;
 use solana_program::{native_token::LAMPORTS_PER_SOL, pubkey::Pubkey};
 use solana_sdk::{
-    account,
-    signature::{keypair_from_seed_phrase_and_passphrase, Keypair, read_keypair_file, write_keypair_file},
-    signer::Signer,
-    system_transaction,
+    account, commitment_config::CommitmentConfig, signature::{keypair_from_seed_phrase_and_passphrase, read_keypair_file, write_keypair_file, Keypair}, signer::Signer, system_transaction
 };
 
 use anchor_client::{Client, ClientError, Program};
@@ -50,12 +47,19 @@ impl fmt::Display for Wallet {
 }
 
 impl Context {
-    pub fn new(url: &str) -> Self {
-        let rpc_client = RpcClient::new(url);
+    pub fn new(url: &str, finalized: bool) -> Self {
+        let comm_scheme: CommitmentConfig;
+        if (finalized) {
+            comm_scheme = CommitmentConfig::finalized();
+        } else {
+            comm_scheme = CommitmentConfig::confirmed();
+        }
+        let rpc_client = RpcClient::new_with_commitment(url, comm_scheme);
+        
         Self { rpc_client }
     }
 
-    pub fn from_cluster(cluster: &str) -> Context {
+    pub fn from_cluster(cluster: &str, finalized: bool) -> Context {
         let cluster_url;
         match cluster {
             "devnet" => cluster_url = URL_DEVNET,
@@ -63,7 +67,7 @@ impl Context {
             "testnet" => cluster_url = URL_TESTNET,
             &_ => cluster_url = cluster,
         }
-        Context::new(cluster_url)
+        Context::new(cluster_url, finalized)
     }
 
     pub fn get_balance(&self, pubkey: &Pubkey) -> Result<u64> {
@@ -200,3 +204,4 @@ pub fn sign_message(signer: &Wallet, message: &str) -> String {
     let sig = signer.key_pair.sign_message(message.as_bytes());
     return sig.to_string();
 }
+

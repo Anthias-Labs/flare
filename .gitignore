@@ -23,3 +23,5 @@ data
 .mnemonic
 ./flare
 ./*.json
+*.json
+flare

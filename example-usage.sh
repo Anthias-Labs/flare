@@ -73,8 +73,8 @@ echo -e "$RED ./flare --cluster devnet send --keypair $(echo $keypair) --to 67pU
 echo
 echo "-------------------------------------"
 echo -e "$BLUE Calling a method from a program... $NC"
-echo -e "$RED ./flare --cluster devnet call --keypair $(echo $keypair) --program WixFUMVqBSTygzeFy9Wuy5XxkeH8xHnUEGvfyyJYqve --accounts 78vJRdkATNZm7cJHaLscYu1HZq24EH3FV6Eppx3BS9qA,$(echo $address) --idl ./example/onchain_voting.json  gibVote GM $NC"
-./flare call --keypair $(echo $keypair) --program WixFUMVqBSTygzeFy9Wuy5XxkeH8xHnUEGvfyyJYqve --accounts 78vJRdkATNZm7cJHaLscYu1HZq24EH3FV6Eppx3BS9qA,$(echo $address) --idl ./example/onchain_voting.json  gibVote GM
+echo -e "$RED ./flare --cluster devnet call --keypair $(echo $keypair) --program WixFUMVqBSTygzeFy9Wuy5XxkeH8xHnUEGvfyyJYqve --accounts 78vJRdkATNZm7cJHaLscYu1HZq24EH3FV6Eppx3BS9qA,$(echo $address) --signers $(echo $keypair) --idl ./example/onchain_voting.json  gibVote GM $NC"
+./flare call --keypair $(echo $keypair) --program WixFUMVqBSTygzeFy9Wuy5XxkeH8xHnUEGvfyyJYqve --accounts 78vJRdkATNZm7cJHaLscYu1HZq24EH3FV6Eppx3BS9qA,$(echo $address) --signers $(echo $keypair) --idl ./example/onchain_voting.json  gibVote GM
 
 echo
 echo "-------------------------------------"
