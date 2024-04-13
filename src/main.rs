@@ -1,6 +1,6 @@
 mod lib;
 use lib::{
-    new_wallet, read_wallet_file, sign_message, wallet_from_seed_phrase, write_wallet_file,
+    new_wallet, read_wallet_file, sign_message, wallet_from_seed_phrase, write_wallet_file, generate_pda_address,
     Context, Wallet,
 };
 
@@ -67,6 +67,7 @@ fn main() -> Result<()> {
     let finalized = args.finalized;
 
     let ctx = Context::from_cluster(&cluster, finalized);
+
     match args.command {
         FlareCommand::Balance(balance_data) => {
             let pubkey = Pubkey::from_str(&balance_data.pubkey)?;
@@ -175,7 +176,14 @@ fn main() -> Result<()> {
             let wallet = read_wallet_file(&address_derive_data.keypair)?;
             println!("{}", wallet.key_pair.pubkey());
         }
-    }
+        FlareCommand::GeneratePDA(generate_pda_data) => {
+            let program = generate_pda_data.program;
+            let seeds = generate_pda_data.seeds;
 
+            let (pubkey, bump) = generate_pda_address(seeds, &Pubkey::from_str(&program)?);
+            println!("{}\nBump: {}", pubkey, bump);
+        }
+    }
+    
     Ok(())
 }

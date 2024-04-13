@@ -50,6 +50,9 @@ pub enum FlareCommand {
 
     /// Fetch IDL from program
     FetchIDL(FetchIDLCommand),
+
+    /// Generate PDA from seeds and program address
+    GeneratePDA(GeneratePDACommand)
 }
 
 #[derive(Debug, Args)]
@@ -169,4 +172,15 @@ pub struct AddressDeriveCommand {
     /// Keypair file
     #[arg(short, long)]
     pub keypair: String,
+}
+
+#[derive(Debug, Args)]
+pub struct GeneratePDACommand {
+    /// Program address
+    #[arg(short, long)]
+    pub program: String,
+
+    /// Seeds separated by comma
+    #[clap(value_delimiter = ',', num_args = 0..)]
+    pub seeds: Vec<String>,
 }
