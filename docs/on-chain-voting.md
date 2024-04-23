@@ -10,7 +10,7 @@ We assume Flare was installed an in the system path (or a binary is present in t
 
 For convenience, here is the address of the program in devnet, but do replace this with your own deployment address:
 
-- `on chain voting (devnet)`: 39EmHuEbqkzUvPncNchXW1Yt6VPmps2Z9ucR82EozNAa
+- **On chain voting (devnet)**: `39EmHuEbqkzUvPncNchXW1Yt6VPmps2Z9ucR82EozNAa`
 
 ## IDL
 

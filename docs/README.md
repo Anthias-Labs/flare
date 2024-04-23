@@ -85,18 +85,20 @@ Where `ACCOUNTS` and `SIGNERS` are comma separated
 Where the `ACCOUNTS FILE PATH` points to a JSON file with the following format:
 ```json
 {
-    "addresses": { // Account addresses for the program call
+    "addresses": { 
         "[account 1]": "5JUr...",
         "[account 2]": "9tLN...",
-        ...
+        "...": "..."
         "signer": "Cbt..."
     },
-    "signers": { // Keypair file paths for accounts marked as signers
+    "signers": { 
         "[account 1]": "account_1.json",
         "[signer]": "signer.json"
     }
 }
 ```
+
+`"addresses"` are the account addresses the program method requires, and `"signers"` are the file paths to the keypairs for the accounts marked as signers.
 
 **Example**: 
 ```bash
