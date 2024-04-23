@@ -1,29 +1,30 @@
 use core::fmt;
-use std::{fs, str::FromStr};
 use std::result::Result::Ok;
+use std::{fs, str::FromStr};
 
 use anyhow::{Error, Result};
 use bip39::Mnemonic;
 use borsh::BorshDeserialize;
-use clap::builder::Str;
 use rand::RngCore;
-use solana_clap_utils::keypair;
 use solana_client::rpc_client::RpcClient;
-use solana_program::{native_token::LAMPORTS_PER_SOL, pubkey::{self, Pubkey}};
+use solana_program::{native_token::LAMPORTS_PER_SOL, pubkey::Pubkey};
 use solana_sdk::{
-    account, commitment_config::CommitmentConfig, signature::{keypair_from_seed_phrase_and_passphrase, read_keypair_file, write_keypair_file, Keypair}, signer::Signer, system_transaction
+    commitment_config::CommitmentConfig,
+    signature::{
+        keypair_from_seed_phrase_and_passphrase, read_keypair_file, write_keypair_file, Keypair,
+    },
+    signer::Signer,
+    system_transaction,
 };
 
-use anchor_client::{Client, ClientError, Program};
 use anchor_lang::idl::IdlAccount;
 use anchor_lang::AnchorDeserialize;
 use anchor_syn::idl::types::Idl;
 use flate2::read::ZlibDecoder;
-use serde_json::{json, Map, Value as JsonValue};
 use std::io::Read;
 
-use std::collections::HashMap;
 use serde_yml;
+use std::collections::HashMap;
 
 const URL: &str = "https://api.mainnet-beta.solana.com";
 
@@ -54,13 +55,13 @@ impl fmt::Display for Wallet {
 impl Context {
     pub fn new(url: &str, finalized: bool) -> Self {
         let comm_scheme: CommitmentConfig;
-        if (finalized) {
+        if finalized {
             comm_scheme = CommitmentConfig::finalized();
         } else {
             comm_scheme = CommitmentConfig::confirmed();
         }
         let rpc_client = RpcClient::new_with_commitment(url, comm_scheme);
-        
+
         Self { rpc_client }
     }
 
@@ -107,7 +108,8 @@ impl Context {
             self.rpc_client.get_latest_blockhash()?,
         );
 
-        let sig = self.rpc_client.send_and_confirm_transaction_with_spinner(&tx)?;
+        self.rpc_client
+            .send_and_confirm_transaction_with_spinner(&tx)?;
         Ok(())
     }
 
@@ -144,7 +146,7 @@ impl Context {
     }
 
     pub fn read_account<T: BorshDeserialize>(&self, account_address: &Pubkey) -> Result<T> {
-        let mut account = self.rpc_client.get_account(account_address)?;
+        let account = self.rpc_client.get_account(account_address)?;
         let mut data = &account.data[8..];
         let r: T = BorshDeserialize::deserialize(&mut data)?;
         Ok(r)
@@ -196,30 +198,28 @@ pub fn read_wallet_file(path: &str) -> Result<Wallet> {
     let kp = read_keypair_file(path);
     let kp = match kp {
         Ok(keypair) => keypair,
-        Err(_) => return Err(Error::msg("Error reading keypair file"))
+        Err(_) => return Err(Error::msg("Error reading keypair file")),
     };
 
     return Ok(Wallet {
         key_pair: kp,
         mnemonic: "".to_string(),
-    })
+    });
 }
 
 pub fn write_wallet_file(wallet: &Wallet, path: &str) -> Result<()> {
     let kp = &wallet.key_pair;
     let r = write_keypair_file(kp, path);
-    match(r) {
+    match r {
         Ok(_) => return Ok(()),
-        Err(_) => return Err(Error::msg("Error writing keypair file"))
+        Err(_) => return Err(Error::msg("Error writing keypair file")),
     }
-
 }
 
 pub fn sign_message(signer: &Wallet, message: &str) -> String {
     let sig = signer.key_pair.sign_message(message.as_bytes());
     return sig.to_string();
 }
-
 
 pub fn generate_pda_address(seeds: Vec<String>, program_id: &Pubkey) -> (Pubkey, u8) {
     let mut seeds_u8: Vec<Vec<u8>> = Vec::new();

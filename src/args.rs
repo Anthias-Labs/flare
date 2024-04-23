@@ -13,7 +13,6 @@ pub struct FlareCli {
     /// Wait for transaction to be finalized (default: confirmed)
     #[arg(short, long, default_value_t = false)]
     pub finalized: bool,
-
 }
 
 #[derive(Debug, Subcommand)]
@@ -52,7 +51,7 @@ pub enum FlareCommand {
     FetchIDL(FetchIDLCommand),
 
     /// Generate PDA from seeds and program address
-    GeneratePDA(GeneratePDACommand)
+    GeneratePDA(GeneratePDACommand),
 }
 
 #[derive(Debug, Args)]
@@ -132,17 +131,17 @@ pub struct CallCommand {
     )]
     pub accounts_file: Option<String>,
 
-    /// Idl file path
-    #[arg(short, long)]
-    pub idl: Option<String>,
-
     /// Instruction name
     pub instruction_name: String,
-    
+
     /// Arguments separated by comma
     #[clap(value_delimiter = ',', num_args = 0..)]
     pub args: Vec<String>,
 
+    /// Idl file path
+    #[arg(short, long)]
+    #[clap(required = false)]
+    pub idl: Option<String>,
 }
 
 #[derive(Debug, Args)]
@@ -157,6 +156,7 @@ pub struct ReadAccountCommand {
 
     /// Idl file path
     #[arg(short, long)]
+    #[clap(required = false)]
     pub idl: Option<String>,
 }
 
