@@ -6,7 +6,7 @@ For documentation of all of Flare's commands, see [here](./README.md).
 
 ## Set-up
 
-We assume Flare was installed in the system path (or a binary is present in the working directory), see more information [here](../README.md). We also assume the project was deployed to devnet as indicated in the Anchor by Example tutorial, and that a keypair with devnet SOL balance is available (we will refer to this file as `keypair.json`).
+We assume Flare was installed in the system path (or a binary is present in the working directory); see more information [here](../README.md). We also assume the project was deployed to devnet as indicated in the Anchor by Example tutorial and that a keypair with devnet SOL balance is available (we will refer to this file as `keypair.json`).
 
 For convenience, here is the address of the program in devnet, but do replace this with your own deployment address:
 
