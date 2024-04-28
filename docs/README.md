@@ -5,7 +5,9 @@ Flare provides a set of tools to interact with the Solana network, both for user
 ## Examples
 
 For some usage examples, see [the example usage script](../example-usage.sh), or one of our project examples:
-- [On chain voting](on-chain-voting.md)
+- [On chain voting](./on-chain-voting.md)
+- [Self-custodial Facebook](./self-custodial-facebook.md)
+- [Using Flare to fetch Drift prices - script integration](./drift-prices.md)
 
 ## General usage
 
