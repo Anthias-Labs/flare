@@ -233,6 +233,8 @@ for tok, price in prices.items():
 print("+---------------------------------+")
 ```
 
+You can find it [here](./drift-all-prices.py).
+
 And we get the following output:
 ```
 +---------------------------------+
