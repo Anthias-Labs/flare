@@ -1,11 +1,10 @@
-use std::collections::HashMap;
 use std::fs;
 use std::str::FromStr;
 
 use anchor_syn::idl::types::{
     Idl, IdlAccountItem, IdlInstruction, IdlType, IdlTypeDefinition, IdlTypeDefinitionTy,
 };
-use anyhow::Result;
+use anyhow::{Error, Result};
 use borsh::{BorshDeserialize, BorshSerialize};
 use convert_case::{Case, Casing};
 use serde_json::{Map, Value};
@@ -14,7 +13,7 @@ use solana_sdk::signature::Keypair;
 use solana_sdk::signer::Signer;
 use solana_sdk::transaction::Transaction;
 
-use crate::lib::{read_wallet_file, Context, Wallet};
+use flare::{read_wallet_file, Context, Wallet};
 
 //use crate::idl::{Idl, IdlEnumType, IdlInstruction, IdlKind, IdlType};
 use solana_program::pubkey::Pubkey;
@@ -46,53 +45,88 @@ pub fn sighash(namespace: &str, name: &str) -> [u8; 8] {
     sighash
 }
 
-pub struct ProgramExecutor {
+pub struct ProgramExecutor<'a> {
     idl: Idl,
-    context: Context,
+    context: &'a Context,
 }
 
 // CAMBIAR ESTO PARA QUE SE PUEDA INSTANCIAR POR FILE O POR GET_IDL
-impl ProgramExecutor {
-    fn get_idl_from_file(path: &str) -> Idl {
-        serde_json::from_str(&fs::read_to_string(path).expect("Cant IDL (change message)"))
-            .expect("Cant JSON (change this message)")
+impl<'a> ProgramExecutor<'a> {
+    fn get_idl_from_file(path: &str) -> Result<Idl> {
+        let file = fs::read_to_string(path);
+        let json_idl: String;
+        match file {
+            Ok(json_string) => json_idl = json_string,
+            Err(e) => return Err(Error::new(e)),
+        }
+        match serde_json::from_str(&json_idl) {
+            Ok(idl) => Ok(idl),
+            Err(e) => Err(Error::new(e)),
+        }
     }
 
-    fn get_metadata() -> Map<String, Value> {
-        let mut metadata = Map::new();
-        metadata.insert("origin".to_string(), Value::String("anchor".to_string()));
-        metadata
+    fn get_idl_with_origin(mut idl: Idl) -> Idl {
+        let metadata = idl.metadata;
+        match metadata {
+            Some(mut value) => {
+                value["origin"] = Value::String(String::from("anchor"));
+                idl.metadata = Some(value);
+            }
+            None => {
+                let mut metadata = Map::new();
+                metadata.insert("origin".to_string(), Value::String("anchor".to_string()));
+                idl.metadata = Some(Value::Object(metadata))
+            }
+        }
+        idl
     }
 
     fn get_idl_string(&self) -> String {
         serde_json::to_string(&self.idl).unwrap()
     }
 
-    pub fn from_file(cluster: &str, finalized: bool, path: &str) -> Self {
-        ProgramExecutor::from_file_with_context(Context::from_cluster(cluster, finalized), path)
+    pub fn new_with_context(
+        context: &'a Context,
+        program_address: &str,
+        path: Option<String>,
+    ) -> Result<Self> {
+        match ProgramExecutor::from_program_address_with_context(context, program_address) {
+            Ok(executor) => Ok(executor),
+            Err(e) => match path {
+                Some(path) => match ProgramExecutor::from_file_with_context(context, &path) {
+                    Ok(executor) => Ok(executor),
+                    Err(e) => Err(e),
+                },
+                None => Err(e),
+            },
+        }
     }
 
-    pub fn from_program_address(cluster: &str, finalized: bool, program_address: &str) -> Result<Self> {
-        ProgramExecutor::from_program_address_with_context(
-            Context::from_cluster(cluster, finalized),
-            program_address,
-        )
+    pub fn from_file_with_context(context: &'a Context, path: &str) -> Result<Self> {
+        let mut idl: Idl;
+        match ProgramExecutor::get_idl_from_file(path) {
+            Ok(idl_obj) => idl = idl_obj,
+            Err(e) => return Err(e),
+        }
+        idl = ProgramExecutor::get_idl_with_origin(idl);
+        Ok(ProgramExecutor { idl, context })
     }
 
-    pub fn from_file_with_context(context: Context, path: &str) -> Self {
-        let mut idl: Idl = ProgramExecutor::get_idl_from_file(path);
-        idl.metadata = Some(Value::Object(ProgramExecutor::get_metadata()));
-        ProgramExecutor { idl, context }
-    }
-
-    pub fn from_program_address_with_context(context: Context, program_address: &str) -> Result<Self> {
-        let mut idl = context.get_idl(program_address)?;
-        idl.metadata = Some(Value::Object(ProgramExecutor::get_metadata()));
+    pub fn from_program_address_with_context(
+        context: &'a Context,
+        program_address: &str,
+    ) -> Result<Self> {
+        let mut idl;
+        match context.get_idl(program_address) {
+            Ok(idl_obj) => idl = idl_obj,
+            Err(e) => return Err(e),
+        }
+        idl = ProgramExecutor::get_idl_with_origin(idl);
         Ok(ProgramExecutor { idl, context })
     }
 }
 
-impl ProgramExecutor {
+impl<'a> ProgramExecutor<'a> {
     fn get_serialized_args_rec(
         &self,
         type_to_serialize: IdlType,
@@ -280,7 +314,7 @@ impl ProgramExecutor {
     }
 }
 
-impl ProgramExecutor {
+impl<'a> ProgramExecutor<'a> {
     pub fn get_idl(&self) -> Idl {
         self.idl.clone()
     }

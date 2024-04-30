@@ -13,9 +13,11 @@ Please make sure you have Cargo in your system.
 5. Run the compiled binary with `./flare`
 
 ## Usage
-To test the tool and see example usage:
+Read the documentation and find some project examples [here](./docs/README.md).
+
+To test the tool and see some example usage:
 1. Write a mnemonic with some balance in devnet to a `.mnemonic` file in root.
-2. Run `./example-usage.sh`. This will build the tool and test every subcommand.
+2. Run `./example-usage.sh`. This will build the tool and test every command.
 
 ## Functions
 ### Chain and Transaction Interactions:
