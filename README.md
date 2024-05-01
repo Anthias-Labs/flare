@@ -71,8 +71,8 @@ Anthias Labs is a boutique blockchain r&d firm focused on public goods tooling a
 ## Acknowledgements
 Acknowledgments of the contributors to Flare including:
 - Nicolas Schaievitch
-- Charlie Ambrose
-- Jacob Creech
+- [Charlie Ambrose](https://twitter.com/0xBroze)
+- [Jacob Creech](https://twitter.com/jacobvcreech)
 
 ## Contributing
 To contribute to Flare, please reach out to the current contributors in our main [Contributor Discord](https://discord.gg/RCJYpMvkBy). 
