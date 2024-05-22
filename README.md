@@ -5,6 +5,12 @@
 Flare is the Command Line Interface for developers on Solana. Below is a breakdown of the various commands included within Flare. If you run into any issues while operating Flare, please open an issue on this repo or contact a contributor from Anthias Labs [here](https://discord.com/invite/RCJYpMvkBy). 
 
 ## Installation
+1. Download the right binary from releases, or build it yourself (see below)
+2. Optionally, rename it to `flare` for convenience.
+3. Place it into the PATH to have it available everywhere in your system.
+4. Run it with `flare` in the terminal.
+
+## Building
 Please make sure you have Cargo in your system.
 1. Clone the repo with `git clone https://github.com/Anthias-Labs/flare.git`
 2. Move into the folder: `cd flare`
